@@ -208,12 +208,18 @@ std::unique_ptr<IIndividual> CGA::pick()
 IIndividual* CRouletteSelection::select(CPopulation* population)
 {
     if (population->size() == 0)
+    {
         logger->Log(LogLevel::WARN, "GA Error: Population is empty. Selection cannot proceed.");
+        return nullptr;
+    }
 
     const ga_nn_value totalFitness = population->totalFitness();
 
     if (totalFitness <= 0.0f)
-        logger->Log(LogLevel::WARN, "GA Error: Total fitness is zero or negative. Selection cannot proceed.");
+    {
+        logger->Log(LogLevel::WARN, "GA Error: Total fitness is zero or negative. Returning first individual.");
+        return population->get(0);
+    }
 
     const ga_nn_value fFitnessSlice = randomFloat(0, totalFitness);
 

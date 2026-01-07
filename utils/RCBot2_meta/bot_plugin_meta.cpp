@@ -434,7 +434,14 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, std::size_t 
 	CRCBotKeyValueList kvl;
 
 	if (fp)
+	{
 		kvl.parseFile(fp);
+		logger->Log(LogLevel::INFO, "Loaded hook info config: %s", filename);
+	}
+	else
+	{
+		logger->Log(LogLevel::WARN, "Hook info config file not found: %s (using defaults)", filename);
+	}
 
 	void *gameServerFactory = reinterpret_cast<void*>(ismm->GetServerFactory(false));
 
