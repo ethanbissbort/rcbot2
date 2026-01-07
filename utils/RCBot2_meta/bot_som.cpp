@@ -38,14 +38,13 @@
 #include "bot_som.h"
 #include "bot_mtrand.h"
 
-float CSom :: m_fLearnRate = 1.0f;
-
 CSom :: CSom (const int iW, const int iH, const int iIn)
-{       
+{
 	unsigned short id = 0;
 
 	m_iW = iW;
 	m_iH = iH;
+	m_fLearnRate = 1.0f;
 
 	// neighbourhood size
 	m_fNSize = static_cast<float>(static_cast<int>(static_cast<float>(iW) / 2));
@@ -92,8 +91,8 @@ void CSom :: updateAround (const std::vector<float>* inputs, CSomNeuron* bmu) co
 	{
 		if ( (dist = bmu->neighbourDistance(current)) <= nsiz )
 		{
-			bmu->update(inputs,std::exp(-dist / (2*nsiz)));    
-		}           
+			bmu->update(inputs, std::exp(-dist / (2*nsiz)), m_fLearnRate);
+		}
 	}
 }
 
@@ -138,13 +137,13 @@ void CSom :: display () const
 	}
 }
 
-void CSomNeuron :: update (const std::vector<float>* inputs, const float inf)
+void CSomNeuron :: update (const std::vector<float>* inputs, const float inf, const float learnRate)
 {
 	for ( std::size_t i = 0; i < inputs->size(); i ++ )
 	{
 		const float change = (*inputs)[i] - fWeights[i];
 
-		fWeights[i] += change*CSom::m_fLearnRate*inf;
+		fWeights[i] += change * learnRate * inf;
 	}
 }
 

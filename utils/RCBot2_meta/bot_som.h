@@ -54,7 +54,7 @@ public:
 		return m_iY;
 	}
 
-	void update (const std::vector<float>* inputs, float inf);
+	void update (const std::vector<float>* inputs, float inf, float learnRate);
 
 	float distance (const std::vector<float>* inputs) const;
 	
@@ -78,9 +78,9 @@ private:
 class CSom
 {
 public:
-	static float m_fLearnRate;
-
 	CSom ( int iW, int iH, int iIn );
+
+	float getLearnRate() const { return m_fLearnRate; }
 
 	~CSom ();
 
@@ -106,6 +106,7 @@ private:
 	int m_iH;
 	int m_iW;
 	float m_fNSize;
+	float m_fLearnRate;
 	unsigned m_iEpochs;
 };
 #endif
