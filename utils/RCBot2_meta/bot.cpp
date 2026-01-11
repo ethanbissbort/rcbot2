@@ -199,6 +199,17 @@ void CBroadcastVoiceCommand :: execute ( CBot *pBot )
 ///////////////////////////////////////
 void CBot::runPlayerMove()
 {
+	// Ensure FL_FAKECLIENT stays set - it can get cleared on respawn
+	// Without this, the engine kicks the bot after Steam auth timeout
+	if (m_pEdict && !m_pEdict->IsFree())
+	{
+		int flags = CClassInterface::getFlags(m_pEdict);
+		if (!(flags & FL_FAKECLIENT))
+		{
+			CClassInterface::addFlags(m_pEdict, FL_FAKECLIENT);
+		}
+	}
+
 	const int cmdnumbr = cmd.command_number + 1;
 
 	//////////////////////////////////
