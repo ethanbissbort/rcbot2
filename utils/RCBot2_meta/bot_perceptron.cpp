@@ -94,9 +94,9 @@ bool CNeuron::fired() //TODO: experimental [APG]RoboCop[CL]
 
 ga_nn_value CPerceptron :: execute ()
 {
-	static unsigned short i;
-	static ga_nn_value *w;
-	static ga_nn_value *x;
+	unsigned short i;
+	ga_nn_value *w;
+	ga_nn_value *x;
 	// bias weight
 	m_output = m_Bias;
 
@@ -128,9 +128,9 @@ ga_nn_value CPerceptron :: getOutput () const
 
 void CPerceptron::train(const ga_nn_value expectedOutput)
 {
-	static unsigned short i;
-	static ga_nn_value *w;
-	static ga_nn_value *x;
+	unsigned short i;
+	ga_nn_value *w;
+	ga_nn_value *x;
 
 	w = m_weights;
 	x = m_inputs;
@@ -148,10 +148,10 @@ void CPerceptron::train(const ga_nn_value expectedOutput)
 
 void CLogisticalNeuron :: train ()// ITransfer *transferFunction, bool usebias )
 {
-	static unsigned short i;
-	static ga_nn_value *w;
-	static ga_nn_value *x;
-	static ga_nn_value delta;
+	unsigned short i;
+	ga_nn_value *w;
+	ga_nn_value *x;
+	ga_nn_value delta;
 
 	w = m_weights;
 	x = m_inputs;
@@ -171,9 +171,9 @@ void CLogisticalNeuron :: train ()// ITransfer *transferFunction, bool usebias )
 
 ga_nn_value CLogisticalNeuron :: execute ( )//, bool usebias )
 {
-	static unsigned short int i;
-	static ga_nn_value *w;
-	static ga_nn_value *x;
+	unsigned short int i;
+	ga_nn_value *w;
+	ga_nn_value *x;
 
 	//m_netinput = 0;
 	w = m_weights;
@@ -362,11 +362,10 @@ void CBotNeuralNet :: batch_train (const CTrainingSet *tset, const unsigned shor
 
 void CBotNeuralNet :: execute (const ga_nn_value* inputs, ga_nn_value* outputs, const ga_nn_value fMin, const ga_nn_value fMax) const
 {
-	static CLogisticalNeuron *pNode;
-	static CLogisticalNeuron *pLayer; //Unused? [APG]RoboCop[CL]
-	static unsigned short i; // i-th node
-	static unsigned short l; // layer
-	static ga_nn_value *output_it;
+	CLogisticalNeuron *pNode;
+	unsigned short i; // i-th node
+	unsigned short l; // layer
+	ga_nn_value *output_it;
 
 	std::memset(outputs,0,sizeof(ga_nn_value)*m_numOutputs);
 	std::memset(m_layeroutput,0,sizeof(ga_nn_value)*m_numInputs);

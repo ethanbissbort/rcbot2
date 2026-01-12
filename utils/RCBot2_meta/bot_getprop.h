@@ -1005,10 +1005,12 @@ public:
 	static float GetEntityHealthPercent(CBaseEntity* pEntity)
 	{
 		const datamap_t* pDataMap = CBaseEntity_GetDataDescMap(pEntity);
-		const unsigned offset = UTIL_FindInDataMap(pDataMap, "m_iHealth");
-		//int offset2 = UTIL_FindInDataMap(pDataMap, "m_iMaxHealth"); //unused? [APG]RoboCop[CL]
-		const int iHealth = *reinterpret_cast<int*>(reinterpret_cast<char*>(pEntity) + offset);
-		const int iMaxHealth = *reinterpret_cast<int*>(reinterpret_cast<char*>(pEntity) + offset);
+		const unsigned offsetHealth = UTIL_FindInDataMap(pDataMap, "m_iHealth");
+		const unsigned offsetMaxHealth = UTIL_FindInDataMap(pDataMap, "m_iMaxHealth");
+		const int iHealth = *reinterpret_cast<int*>(reinterpret_cast<char*>(pEntity) + offsetHealth);
+		const int iMaxHealth = *reinterpret_cast<int*>(reinterpret_cast<char*>(pEntity) + offsetMaxHealth);
+		if (iMaxHealth <= 0)
+			return 0.0f;
 		return static_cast<float>(iHealth) / static_cast<float>(iMaxHealth);
 	}
 };

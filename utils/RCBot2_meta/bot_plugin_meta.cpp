@@ -442,7 +442,14 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, std::size_t 
 	CRCBotKeyValueList kvl;
 
 	if (fp)
+	{
 		kvl.parseFile(fp);
+		logger->Log(LogLevel::INFO, "Loaded hook info config: %s", filename);
+	}
+	else
+	{
+		logger->Log(LogLevel::WARN, "Hook info config file not found: %s (using defaults)", filename);
+	}
 
 	void *gameServerFactory = reinterpret_cast<void*>(ismm->GetServerFactory(false));
 
@@ -933,11 +940,12 @@ void RCBotPluginMeta::BotQuotaCheck() {
 	}
 
 	if (m_fBotQuotaTimer < 1.0f) {
-		m_fBotQuotaTimer = engine->Time() + 10.0f; // Sleep 10 seconds
+		m_fBotQuotaTimer = engine->Time() + 10.0f; // Sleep 10 seconds on first call
+		return; // Don't check quota immediately, wait for initial delay
 	}
 
-	if (m_fBotQuotaTimer < engine->Time() - rcbot_bot_quota_interval.GetFloat()) {
-		m_fBotQuotaTimer = engine->Time();
+	if (engine->Time() >= m_fBotQuotaTimer) {
+		m_fBotQuotaTimer = engine->Time() + rcbot_bot_quota_interval.GetFloat();
 
 		// Change Notification
 		bool notify = false;

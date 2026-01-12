@@ -94,7 +94,7 @@ void CBotConfigFile::doNextCommand()
     if (m_fNextCommandTime < engine->Time() &&
         m_iCmd < m_Commands.size())
     {
-        char cmd[64] = {};
+        char cmd[256] = {};
         snprintf(cmd, sizeof(cmd), "%s\n", m_Commands[m_iCmd]);
         engine->ServerCommand(cmd);
 
@@ -108,11 +108,11 @@ void CBotConfigFile::executeCommands()
 {
     while (m_iCmd < m_Commands.size())
     {
-        char cmd[64] = {};
-        snprintf(cmd, sizeof(cmd), "%s\n", m_Commands[m_iCmd]); // Directly use m_Commands[m_iCmd] as it is a char*
+        char cmd[256] = {};
+        snprintf(cmd, sizeof(cmd), "%s\n", m_Commands[m_iCmd]);
         engine->ServerCommand(cmd);
 
-        logger->Log(LogLevel::TRACE, "Bot Command '%s' executed", m_Commands[m_iCmd]); // Directly use m_Commands[m_iCmd]
+        logger->Log(LogLevel::TRACE, "Bot Command '%s' executed", m_Commands[m_iCmd]);
         m_iCmd++;
     }
 

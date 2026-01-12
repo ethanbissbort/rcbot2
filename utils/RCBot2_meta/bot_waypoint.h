@@ -433,16 +433,23 @@ public:
 	{
 		if (pWpt == nullptr)
 			return -1;
-		/**
-		* This should be nuked. RCBot2 should be upgraded to store waypoints on an unordered_map, the index becomes the key.
-		* Also just store the waypoint index on the waypoint itself. Valve navmesh doesn't need to look up the area id, each area know it's own ID.
-		* Better than dealing with this pointer math crap
-		*/
 
-		// return ((int)pWpt - (int)m_theWaypoints)/sizeof(CWaypoint);
+		// Check if pointer is within the waypoint array bounds
+		if (pWpt < m_theWaypoints || pWpt >= (m_theWaypoints + MAX_WAYPOINTS))
+			return -1;
 
-		// This will probably not work -caxanga334
-		return static_cast<int>((reinterpret_cast<std::intptr_t>(pWpt) - reinterpret_cast<std::intptr_t>(m_theWaypoints)) / sizeof(CWaypoint));
+		// Calculate index using pointer arithmetic
+		const int index = static_cast<int>(pWpt - m_theWaypoints);
+
+		// Validate the result
+		if (index < 0 || index >= m_iNumWaypoints)
+			return -1;
+
+		// Final sanity check: verify the pointer matches
+		if (&m_theWaypoints[index] != pWpt)
+			return -1;
+
+		return index;
 	}
 
 	static void autoFix(bool bAutoFixNonArea);

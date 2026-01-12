@@ -224,106 +224,56 @@ private:
 	int m_iParent;
 	int m_iWaypoint;
 };
-// Insertion sorted list
-class AStarListNode
+// Priority queue comparator for A* nodes (min-heap based on f-cost)
+struct AStarNodeCompare
 {
-public:
-	AStarListNode ( AStarNode *data )
+	bool operator()(const AStarNode* a, const AStarNode* b) const
 	{
-		m_Data = data;
-		m_Next = nullptr;
+		// Return true if 'a' has higher f-cost than 'b' (for min-heap behavior)
+		return !a->precedes(b);
 	}
-	AStarNode *m_Data;
-	AStarListNode *m_Next;
 };
 
+// O(log n) priority queue-based open list for A* pathfinding
 class AStarOpenList
 {
 public:
-	AStarOpenList()
+	AStarOpenList() = default;
+
+	bool empty() const
 	{
-		m_Head = nullptr;
+		return m_heap.empty();
 	}
 
-	bool empty () const
+	AStarNode* top() const
 	{
-		return m_Head== nullptr;
-	}
-
-	AStarNode *top () const
-	{
-		if ( m_Head == nullptr)
+		if (m_heap.empty())
 			return nullptr;
-		
-		return m_Head->m_Data;
+		return m_heap.front();
 	}
 
-	void pop ()
+	void pop()
 	{
-		if ( m_Head != nullptr)
+		if (!m_heap.empty())
 		{
-			const AStarListNode *t = m_Head;
-
-			m_Head = m_Head->m_Next;
-
-			delete t;
+			std::pop_heap(m_heap.begin(), m_heap.end(), AStarNodeCompare());
+			m_heap.pop_back();
 		}
 	}
 
-
-	void add ( AStarNode *data )
+	void add(AStarNode* data)
 	{
-		AStarListNode *newNode = new AStarListNode(data);
-
-		if ( m_Head == nullptr)
-			m_Head = newNode;
-		else
-		{
-			if ( data->precedes(m_Head->m_Data) )
-			{
-				newNode->m_Next = m_Head;
-				m_Head = newNode;
-			}
-			else
-			{
-				AStarListNode* p = m_Head;
-				AStarListNode* t = m_Head->m_Next;
-
-				while ( t != nullptr)
-				{
-					if ( data->precedes(t->m_Data) )
-					{
-						p->m_Next = newNode;
-						newNode->m_Next = t;
-						break;
-					}
-
-					p = t;
-					t = t->m_Next;
-				}
-
-				if ( t == nullptr)
-					p->m_Next = newNode;
-
-			}
-		}
+		m_heap.push_back(data);
+		std::push_heap(m_heap.begin(), m_heap.end(), AStarNodeCompare());
 	}
 
-	void destroy ()
+	void destroy()
 	{
-		while ( m_Head != nullptr)
-		{
-			const AStarListNode* t = m_Head;
-			m_Head = m_Head->m_Next;
-			delete t;
-			t = nullptr;
-		}
-
-		m_Head = nullptr;
+		m_heap.clear();
 	}
-	
+
 private:
-	AStarListNode *m_Head;
+	std::vector<AStarNode*> m_heap;
 };
 
 /*
@@ -422,7 +372,7 @@ public:
 	void updatePosition () override;
 
 	float getBelief (const int index) override
-	{ if ( index >= 0 ) return m_fBelief[index]; return 0; }
+	{ if ( index >= 0 && index < CWaypoints::MAX_WAYPOINTS ) return m_fBelief[index]; return 0; }
 
 	void failMove () override;
 
