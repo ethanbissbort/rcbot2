@@ -1045,10 +1045,21 @@ bool RCBotPluginMeta::Hook_LevelInit(const char *pMapName,
 	CBotGlobals::setMapRunning(true);
 	CBotConfigFile::reset();
 	
-	if ( mp_teamplay.IsValid() )
+	// Determine teamplay mode: rcbot_teamplay overrides mp_teamplay
+	// rcbot_teamplay: -1 = use mp_teamplay (default), 0 = force off, 1 = force on
+	int teamplayOverride = rcbot_teamplay.GetInt();
+	if (teamplayOverride >= 0)
+	{
+		CBotGlobals::setTeamplay(teamplayOverride > 0);
+	}
+	else if ( mp_teamplay.IsValid() )
+	{
 		CBotGlobals::setTeamplay(mp_teamplay.GetBool());
+	}
 	else
+	{
 		CBotGlobals::setTeamplay(false);
+	}
 
 	CBotEvents::setupEvents();
 

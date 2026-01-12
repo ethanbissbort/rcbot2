@@ -82,6 +82,7 @@ ConVar rcbot_dont_move("rcbot_dont_move", "0", 0, "if 1 , bots will all move for
 ConVar rcbot_runplayercmd_dods("rcbot_runplayer_cmd_dods", "417", 0, "offset of the DOD:S PlayerRunCommand function");
 ConVar rcbot_ladder_offs("rcbot_ladder_offs", "42", 0, "difference in height for bot to think it has touched the ladder waypoint");
 ConVar rcbot_ffa("rcbot_ffa", "0", 0, "Free for all mode -- bots shoot everyone");
+ConVar rcbot_teamplay("rcbot_teamplay", "-1", 0, "Force teamplay mode: -1 = use mp_teamplay (default), 0 = force off, 1 = force on");
 ConVar rcbot_prone_enemy_only("rcbot_prone_enemy_only", "1", 0, "if 1 bots only prone in DOD:S when they have an enemy");
 ConVar rcbot_menu_update_time1("rcbot_menu_update_time1", "0.04", 0, "time to update menus [displaying message]");
 ConVar rcbot_menu_update_time2("rcbot_menu_update_time2", "0.2", 0, "time to update menus [interval]");
@@ -104,7 +105,7 @@ ConVar rcbot_supermode("rcbot_supermode", "0", 0, "If 1 will make every bot skil
 ConVar rcbot_addbottime("rcbot_addbottime", "5", 0, "The time in seconds for bots to be added after another");
 ConVar rcbot_gamerules_offset("rcbot_gamerules_offset", "5", 0, "offset for gamerules object");
 ConVar rcbot_datamap_offset("rcbot_datamap_offset", "0", 0, "offset for datamaps");
-ConVar rcbot_bot_quota_interval("rcbot_bot_quota_interval", "10", 0, "Interval between bot quota checks, 0 or lower to disable");
+ConVar rcbot_bot_quota_interval("rcbot_bot_quota_interval", "0", 0, "Interval between bot quota checks, 0 or lower to disable");
 ConVar rcbot_show_welcome_msg("rcbot_show_welcome_msg", "1", 0, "Show welcome message on player connect");//Not referenced properly? [APG]RoboCop[CL]
 ConVar rcbot_force_class("rcbot_force_class", "0", 0, "Force bots to choose specified class, kills alive bots on change (1 - 9, set to 0 for none)");
 ConVar rcbot_ignore_spectators("rcbot_ignore_spectators", "0", 0, "Ignore spectators when calculating target number of bots");
