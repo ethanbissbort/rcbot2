@@ -1,39 +1,17 @@
 # RCBot2 Usage Guide
 
-Complete guide to installing, configuring, and using RCBot2 on your Source engine server.
+Complete guide to installing, configuring, and using RCBot2.
 
 ---
 
 ## Table of Contents
 
-- [Overview](#overview)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Command Reference](#command-reference)
-- [Configuration](#configuration)
-- [SourceMod API](#sourcemod-api)
+- [Configuration Variables (CVars)](#configuration-variables-cvars)
+- [Game Mode Configuration](#game-mode-configuration)
 - [Troubleshooting](#troubleshooting)
-- [Getting Help](#getting-help)
-
----
-
-## Overview
-
-RCBot2 is an advanced AI bot plugin for Source engine games including:
-
-- Team Fortress 2
-- Day of Defeat: Source
-- Half-Life 2: Deathmatch
-- Counter-Strike: Source
-
-### Features
-
-- Intelligent bot navigation using waypoints
-- Game-specific AI behavior
-- Class-based strategies (TF2)
-- Configurable skill levels
-- SourceMod integration (optional)
-- Automatic waypoint testing and refinement
 
 ---
 
@@ -41,20 +19,20 @@ RCBot2 is an advanced AI bot plugin for Source engine games including:
 
 ### Requirements
 
-- Source Engine dedicated server (TF2, DOD:S, HL2:DM, CS:S)
-- MetaMod:Source 1.10+ installed
-- SourceMod (optional, for extended functionality)
+- Source Engine dedicated server
+- MetaMod:Source 1.10+
+- SourceMod (optional, for admin integration)
 
-### Quick Install
+### Install Steps
 
-1. **Install MetaMod:Source** on your server
-   - [MetaMod:Source Installation Guide](https://wiki.alliedmods.net/Installing_Metamod:Source)
+1. **Install MetaMod:Source**
+   - [Installation Guide](https://wiki.alliedmods.net/Installing_Metamod:Source)
 
 2. **Download RCBot2**
    - [Latest Release](https://github.com/ethanbissbort/rcbot2/releases)
 
 3. **Extract to game directory**
-   - Extract into your game folder (e.g., `tf/` or `cstrike/`)
+   - Extract into your game folder (e.g., `hl2mp/`, `tf/`, `cstrike/`)
 
 4. **Download waypoints**
    - [Waypoint Repository](http://rcbot.bots-united.com/waypoints.php)
@@ -72,15 +50,13 @@ RCBot2 is an advanced AI bot plugin for Source engine games including:
 ```
 {game}/
 ├── addons/
-│   ├── metamod.vdf
 │   └── rcbot2meta/
 │       ├── bin/
 │       │   └── rcbot.2.{game}.so
 │       └── rcbot2meta.vdf
 └── rcbot2/
     ├── config/
-    │   ├── config.ini
-    │   └── bot_profiles.ini
+    │   └── config.ini
     └── waypoints/
         └── {game}/
             └── {mapname}.rcw
@@ -93,37 +69,31 @@ RCBot2 is an advanced AI bot plugin for Source engine games including:
 ### Adding Bots
 
 ```
-rcbot addbot               // Create one bot
-rcbot_quota 8              // Set bot count to 8
-rcbot addbot soldier       // Create specific class (TF2)
+rcbot addbot                    // Add random bot
+rcbot addbot BotName            // Add named bot
+rcbot addbot BotName soldier    // Add TF2 class bot
+rcbot addbot BotName heavy 2    // Add to specific team
 ```
 
-### Managing Bots
+### Removing Bots
 
 ```
-rcbot kickbot              // Remove one bot
-rcbot_removeall            // Remove all bots
-rcbot debug 2              // Enable debug output
+rcbot kickbot                   // Remove random bot
+rcbot kickbot 2                 // Remove from team 2
 ```
 
 ### Waypoint Commands
 
 ```
-rcbot wpt on               // Show waypoints
-rcbot wpt load             // Load waypoints
-rcbot wpt save             // Save waypoints
+sv_cheats 1                     // Required for waypoint display
+rcbot wpt on                    // Show waypoints
+rcbot wpt load                  // Load waypoints
+rcbot wpt save                  // Save waypoints
 ```
 
 ---
 
 ## Command Reference
-
-### General Commands
-
-| Command | Description |
-|---------|-------------|
-| `rcbotd` | Display RCBot2 info and commands |
-| `rcbot help` | Show command help |
 
 ### Bot Management
 
@@ -131,18 +101,7 @@ rcbot wpt save             // Save waypoints
 |---------|-------------|
 | `rcbot addbot [name] [class] [team]` | Create a bot |
 | `rcbot kickbot [team]` | Remove a bot |
-| `rcbot_removeall` | Remove all bots |
 | `rcbot control <name>` | Take control of a bot |
-
-**Examples:**
-```
-rcbot addbot                    // Random bot
-rcbot addbot BotName            // Named bot
-rcbot addbot BotName soldier    // Soldier bot (TF2)
-rcbot addbot BotName heavy 2    // Heavy on team 2
-rcbot kickbot                   // Kick random bot
-rcbot kickbot 2                 // Kick from team 2
-```
 
 ### Waypoint Commands
 
@@ -161,548 +120,296 @@ rcbot kickbot 2                 // Kick from team 2
 | `rcbot pathwaypoint create` | Create path connection |
 | `rcbot pathwaypoint remove` | Remove path connection |
 
-**Waypoint Types:**
-- `jump` - Jump waypoint
-- `crouch` - Crouch waypoint
-- `ladder` - Ladder waypoint
-- `wait` - Wait/camp waypoint
-- `sniper` - Sniper spot
-- `sentry` - Sentry position (TF2)
-- `health` - Health pack
-- `ammo` - Ammo pack
-- `resupply` - Resupply locker
+### Nav-Test Commands
+
+Automated waypoint testing system.
+
+| Command | Description |
+|---------|-------------|
+| `rcbot navtest start [duration]` | Start nav-test session |
+| `rcbot navtest stop` | Stop nav-test session |
+| `rcbot navtest status` | Show session status |
+| `rcbot navtest report` | Generate issue report |
+| `rcbot navtest save` | Save session data |
+| `rcbot navtest load <session_id>` | Load session data |
+
+### Auto-Refine Commands
+
+Automatic waypoint improvement based on nav-test data.
+
+| Command | Description |
+|---------|-------------|
+| `rcbot refine autorefine` | Run auto-refinement |
+| `rcbot refine analyze [-v]` | Analyze waypoint health |
+
+Options for autorefine:
+- `analyze-only` - Only analyze, don't modify
+- `dry-run` - Show what would change
+- `no-save` - Don't auto-save changes
+- `no-remove` - Don't remove waypoints
+- `max-iter=N` - Limit iterations
+- `stop` - Stop running refinement
+- `rollback [N]` - Undo N refinements
+
+### Tactical Commands
+
+AI playstyle and decision-making system.
+
+| Command | Description |
+|---------|-------------|
+| `rcbot tactical enable [0\|1]` | Enable/disable tactical mode |
+| `rcbot tactical playstyle <style>` | Set default playstyle |
+| `rcbot tactical debug [0\|1]` | Toggle debug output |
+| `rcbot tactical scan` | Run tactical analysis |
+| `rcbot tactical save` | Save tactical data |
+| `rcbot tactical load` | Load tactical data |
+
+Playstyles: `balanced`, `aggressive`, `defensive`, `support`, `sniper`, `flanker`, `camper`, `rusher`
+
+### Utility Commands
+
+| Command | Description |
+|---------|-------------|
+| `rcbot door scan` | Scan map for doors |
+| `rcbot door info` | Show door info |
+| `rcbot gravity info` | Show gravity/fall damage info |
+| `rcbot gravity refresh` | Re-analyze gravity data |
+| `rcbot teleport scan` | Scan for teleport entities |
+| `rcbot teleport info` | Show teleport info |
+| `rcbot teleport createwpts` | Create teleport waypoints |
 
 ### Debug Commands
 
 | Command | Description |
 |---------|-------------|
-| `rcbot debug [level] [bot]` | Set debug level (0-3) |
+| `rcbot debug bot <index>` | Debug specific bot |
+| `rcbot debug think <0\|1>` | Toggle think debug |
 | `rcbot util teleport` | Teleport to waypoint |
 | `rcbot util printent` | Print entity info |
 
-**Debug Levels:**
-- `0` - No debug
-- `1` - Basic info
-- `2` - Detailed info
-- `3` - Verbose output
-
-### Nav-Test Commands
-
-| Command | Description |
-|---------|-------------|
-| `rcbot navtest start` | Start automated testing |
-| `rcbot navtest stop` | Stop testing |
-| `rcbot navtest status` | Show test status |
-| `rcbot navtest report` | Generate issue report |
-
-### Auto-Refine Commands
-
-| Command | Description |
-|---------|-------------|
-| `rcbot autorefine analyze` | Analyze nav-test results |
-| `rcbot autorefine suggest` | Show suggestions |
-| `rcbot autorefine apply` | Apply suggestions |
-| `rcbot autorefine undo` | Undo changes |
-
-### Tactical Commands
-
-| Command | Description |
-|---------|-------------|
-| `rcbot tactical status` | Show tactical state |
-| `rcbot tactical playstyle <type>` | Set playstyle |
-| `rcbot tactical debug` | Toggle debug |
-
 ---
 
-## Configuration
+## Configuration Variables (CVars)
 
-### Configuration Files
-
-Located in `{game}/rcbot2/config/`:
-
-| File | Purpose |
-|------|---------|
-| `config.ini` | Main bot configuration |
-| `bot_profiles.ini` | Bot personality profiles |
-| `bot_skills.ini` | Skill level definitions |
-| `weapons.ini` | Weapon preferences |
-
-### Server CFG Integration
-
-**`cfg/rcbot.cfg`:**
-```
-// Bot Quota
-rcbot_quota 8
-rcbot_quota_interval 0.5
-
-// Skill Levels
-rcbot_skill_min 0.3
-rcbot_skill_max 0.8
-
-// Behavior
-rcbot_change_classes 1
-rcbot_taunt 1
-rcbot_shoot_breakables 1
-
-// TF2 Specific
-rcbot_tf2_protect_cap_percent 0.5
-rcbot_tf2_autoupdate_point_time 0.5
-```
-
-**`cfg/server.cfg`:**
-```
-exec rcbot.cfg
-```
-
-### Configuration Variables (CVars)
-
-#### Bot Behavior
+### Game Mode CVars
 
 | CVar | Default | Description |
 |------|---------|-------------|
-| `rcbot_quota` | `0` | Number of bots to maintain |
-| `rcbot_quota_interval` | `0.0` | Interval to add bots (seconds) |
-| `rcbot_change_classes` | `0` | Allow bots to change classes |
-| `rcbot_skill_min` | `0.0` | Minimum bot skill (0.0-1.0) |
-| `rcbot_skill_max` | `1.0` | Maximum bot skill (0.0-1.0) |
-| `rcbot_nonrandom_kicking` | `0` | Kick bots in order |
+| `rcbot_teamplay` | `-1` | Force teamplay: -1 = use mp_teamplay, 0 = off, 1 = on |
+| `rcbot_coop` | `-1` | Coop mode: -1 = auto-detect, 0 = off, 1 = on |
+| `rcbot_ffa` | `0` | Free-for-all mode (bots shoot everyone) |
+
+### Bot Management CVars
+
+| CVar | Default | Description |
+|------|---------|-------------|
+| `rcbot_bot_quota_interval` | `0` | Quota check interval (0 = disabled) |
+| `rcbot_addbottime` | `5` | Seconds between bot additions |
+| `rcbot_nonrandom_kicking` | `0` | Kick newest bot instead of random |
+| `rcbot_nonrandom_profile` | `0` | Use first profile instead of random |
+| `rcbot_ignore_spectators` | `0` | Ignore spectators for bot count |
+
+### Bot Behavior CVars
+
+| CVar | Default | Description |
+|------|---------|-------------|
+| `rcbot_change_classes` | `0` | Allow class changes (TF2) |
 | `rcbot_melee_only` | `0` | Bots only use melee weapons |
+| `rcbot_taunt` | `0` | Enable taunting (TF2) |
 | `rcbot_shoot_breakables` | `1` | Shoot breakable objects |
-| `rcbot_taunt` | `1` | Allow taunting |
+| `rcbot_notarget` | `0` | Bots ignore the host player |
+| `rcbot_supermode` | `0` | Enhanced bot skill |
+| `rcbot_messaround` | `1` | Bots mess around at startup |
 
-#### Navigation
+### Navigation CVars
 
 | CVar | Default | Description |
 |------|---------|-------------|
-| `rcbot_autowaypoint_dist` | `200` | Auto-waypoint distance |
-| `rcbot_supermode` | `0` | Super navigation mode |
-| `rcbot_pathrevision` | `0` | Enable path revision |
-| `rcbot_wpt_autotype` | `0` | Auto-assign waypoint types |
+| `rcbot_autowpt_dist` | `150.0` | Auto-waypoint placement distance |
+| `rcbot_wpt_autotype` | `1` | Auto-assign waypoint types |
+| `rcbot_wpt_autotype_detection_range` | `80` | Range for entity detection |
+| `rcbot_wpt_width` | `48` | Player width for path connections |
+| `rcbot_wpt_autoradius` | `0` | Default waypoint radius |
+| `rcbot_pathrevs` | `30` | Path search iterations per frame |
+| `rcbot_visrevs` | `6` | Visibility search iterations |
 
-#### Debug
+### Combat CVars
+
+| CVar | Default | Description |
+|------|---------|-------------|
+| `rcbot_enemyshootfov` | `0.97` | FOV dot product to shoot enemies |
+| `rcbot_anglespeed` | `0.25` | Turn speed (0-1, lower = slower) |
+| `rcbot_avoid_radius` | `80` | Obstacle avoidance radius |
+| `rcbot_avoid_strength` | `100` | Avoidance strength (0 = disabled) |
+| `rcbot_jump_obst_dist` | `80` | Distance to jump obstacles |
+
+### Debug CVars
 
 | CVar | Default | Description |
 |------|---------|-------------|
 | `rcbot_debug_show_route` | `0` | Show bot routes |
 | `rcbot_debug_dont_shoot` | `0` | Prevent shooting |
 | `rcbot_debug_notasks` | `0` | Disable all tasks |
-| `rcbot_notarget` | `0` | Bots ignore threats |
 | `rcbot_dont_move` | `0` | Prevent movement |
+| `rcbot_stop` | `0` | Stop all bot thinking |
 
-#### TF2 Specific
-
-| CVar | Default | Description |
-|------|---------|-------------|
-| `rcbot_tf2_protect_cap_time` | `8.0` | Time to protect cap |
-| `rcbot_tf2_protect_cap_percent` | `0.5` | Team % to protect |
-| `rcbot_tf2_spy_mode` | `0` | Spy behavior mode |
-| `rcbot_tf2_engineer_mode` | `0` | Engineer behavior mode |
-| `rcbot_tf2_medic_mode` | `0` | Medic behavior mode |
-| `rcbot_tf2_sentry_type` | `0` | Sentry type (0=normal, 1=mini) |
-| `rcbot_tf2_dispenserbuild` | `1` | Allow dispenser building |
-| `rcbot_tf2_teleporterbuild` | `1` | Allow teleporter building |
-| `rcbot_tf2_medigun_autoheal` | `1` | Auto-heal with medigun |
-
-#### CSS Specific
+### TF2-Specific CVars
 
 | CVar | Default | Description |
 |------|---------|-------------|
-| `rcbot_css_difficulty` | `1` | CSS bot difficulty |
-| `rcbot_css_enable_buy` | `1` | Enable weapon buying |
+| `rcbot_tf2_prot_cap_time` | `12.5` | Cap protection time |
+| `rcbot_tf2_protect_cap_percent` | `0.25` | % of bots defending cap |
+| `rcbot_force_class` | `0` | Force class (1-9, 0 = none) |
+| `rcbot_tf2_medic_letgotime` | `0.5` | Medic heal switch time |
+| `rcbot_tf2_pyro_airblast_ammo` | `50` | Min ammo for airblast |
+| `rcbot_move_sentry_time` | `120` | Sentry relocation time |
+| `rcbot_move_disp_time` | `120` | Dispenser relocation time |
+| `rcbot_move_tele_time` | `120` | Teleporter relocation time |
 
-#### DOD:S Specific
+### DOD:S-Specific CVars
 
 | CVar | Default | Description |
 |------|---------|-------------|
-| `rcbot_dods_flag_capture_radius` | `200` | Flag capture radius |
+| `rcbot_prone_enemy_only` | `1` | Only prone when enemy present |
+| `rcbot_dontcapture` | `0` | Disable flag capturing |
+| `rcbot_stats_inrange_dist` | `320` | Radio command range |
 
-### Skill Configuration
+### CS:S-Specific CVars
 
-**Skill values:**
-- `0.0` - Very easy (poor aim, slow reactions)
-- `0.3` - Easy (beginner bots)
-- `0.5` - Medium (average player)
-- `0.7` - Hard (skilled player)
-- `0.9` - Very hard (near-perfect aim)
-- `1.0` - Impossible (not recommended)
-
-**Skill presets:**
-```
-// Casual gameplay
-alias rcbot_skill_casual "rcbot_skill_min 0.2; rcbot_skill_max 0.6"
-
-// Competitive
-alias rcbot_skill_comp "rcbot_skill_min 0.6; rcbot_skill_max 0.9"
-
-// Practice/Easy
-alias rcbot_skill_easy "rcbot_skill_min 0.1; rcbot_skill_max 0.4"
-```
-
-### Example Configurations
-
-**Public TF2 Server:**
-```
-rcbot_quota 12
-rcbot_quota_interval 0.5
-rcbot_skill_min 0.25
-rcbot_skill_max 0.65
-rcbot_change_classes 1
-rcbot_taunt 1
-rcbot_tf2_protect_cap_percent 0.4
-rcbot_tf2_dispenserbuild 1
-rcbot_tf2_teleporterbuild 1
-```
-
-**Training Server:**
-```
-rcbot_quota 4
-rcbot_quota_interval 1.0
-rcbot_skill_min 0.1
-rcbot_skill_max 0.4
-rcbot_debug 1
-rcbot_debug_show_route 1
-```
-
-**Competitive Practice:**
-```
-rcbot_quota 6
-rcbot_skill_min 0.65
-rcbot_skill_max 0.90
-rcbot_change_classes 1
-rcbot_taunt 0
-```
+| CVar | Default | Description |
+|------|---------|-------------|
+| `rcbot_css_economy_eco_limit` | `2000` | Minimum money to buy |
 
 ---
 
-## SourceMod API
+## Game Mode Configuration
 
-RCBot2 provides optional SourceMod natives for plugin integration.
+### Teamplay Mode (HL2DM)
 
-### Setup
+HL2DM doesn't always set `mp_teamplay` correctly. Use `rcbot_teamplay` to force team behavior:
 
-1. Build RCBot2 with SourceMod support:
-   ```bash
-   python configure.py -s TF2 --sm-path ~/sourcemod ...
-   ```
+```
+// Force teamplay on
+rcbot_teamplay 1
 
-2. Include in your plugin:
-   ```sourcepawn
-   #include <rcbot2>
-   ```
+// Force teamplay off (FFA)
+rcbot_teamplay 0
 
-### Bot Management Natives
-
-```sourcepawn
-// Create a bot
-native int RCBot_CreateBot(const char[] name = "", const char[] class = "", int team = 0);
-
-// Kick a bot
-native bool RCBot_KickBot(int client = 0, int team = 0);
-
-// Remove all bots
-native int RCBot_RemoveAll();
-
-// Check if client is RCBot
-native bool RCBot_IsBot(int client);
-
-// Get bot count
-native int RCBot_GetBotCount();
+// Use game's mp_teamplay setting
+rcbot_teamplay -1
 ```
 
-### Bot Properties Natives
+### Coop Mode (HL2DM)
 
-```sourcepawn
-// Get/set bot skill
-native float RCBot_GetBotSkill(int client);
-native bool RCBot_SetBotSkill(int client, float skill);
+For cooperative maps where players fight NPCs together:
 
-// Get/set bot quota
-native int RCBot_GetBotQuota();
-native bool RCBot_SetBotQuota(int quota);
+```
+// Force coop mode on
+rcbot_coop 1
+
+// Force coop mode off
+rcbot_coop 0
+
+// Auto-detect from map name (coop, survival, horde, pve)
+rcbot_coop -1
 ```
 
-### Waypoint Natives
+In coop mode:
+- Bots only attack hostile NPCs, not players
+- Higher roaming priority for linear map progression
+- Automatic team switching if spawn death is detected
 
-```sourcepawn
-// Get nearest waypoint
-native int RCBot_GetNearestWaypoint(const float pos[3]);
+### Free-For-All Mode
 
-// Get waypoint count
-native int RCBot_GetWaypointCount();
+```
+rcbot_ffa 1
 ```
 
-### Forwards
+Bots attack everyone regardless of team.
 
-```sourcepawn
-// Called when bot is created
-forward void RCBot_OnBotCreated(int client, const char[] name, int team);
+---
 
-// Called when bot is kicked
-forward void RCBot_OnBotKicked(int client);
+## Example Configurations
 
-// Called during bot think
-forward Action RCBot_OnBotThink(int client);
+### HL2DM Team Deathmatch
+
+```cfg
+// cfg/rcbot.cfg
+rcbot_teamplay 1
+rcbot_bot_quota_interval 0
+rcbot_shoot_breakables 1
+rcbot_melee_only 0
 ```
 
-### Example Plugin
+### HL2DM Coop Server
 
-```sourcepawn
-#include <sourcemod>
-#include <rcbot2>
+```cfg
+// cfg/rcbot.cfg
+rcbot_coop 1
+rcbot_teamplay 0
+rcbot_bot_quota_interval 0
+```
 
-public void OnPluginStart() {
-    RegAdminCmd("sm_botinfo", CMD_BotInfo, ADMFLAG_ROOT);
-}
+### TF2 Public Server
 
-public Action CMD_BotInfo(int client, int args) {
-    int botCount = RCBot_GetBotCount();
-    int wptCount = RCBot_GetWaypointCount();
-
-    ReplyToCommand(client, "RCBots: %d, Waypoints: %d", botCount, wptCount);
-
-    for (int i = 1; i <= MaxClients; i++) {
-        if (IsClientInGame(i) && RCBot_IsBot(i)) {
-            float skill = RCBot_GetBotSkill(i);
-            ReplyToCommand(client, "  Bot %d: skill=%.2f", i, skill);
-        }
-    }
-
-    return Plugin_Handled;
-}
-
-public void RCBot_OnBotCreated(int client, const char[] name, int team) {
-    PrintToServer("RCBot %s joined team %d", name, team);
-}
+```cfg
+// cfg/rcbot.cfg
+rcbot_change_classes 1
+rcbot_taunt 0
+rcbot_bot_quota_interval 0
+rcbot_tf2_protect_cap_percent 0.4
 ```
 
 ---
 
 ## Troubleshooting
 
-### Installation Issues
+### RCBot2 not loading
 
-#### RCBot2 not loading
+1. Verify MetaMod:Source is loaded: `meta list`
+2. Check plugin file exists: `addons/rcbot2meta/bin/rcbot.2.{game}.so`
+3. Check file permissions (Linux): `chmod +x addons/rcbot2meta/bin/*.so`
 
-**Symptoms:** No RCBot messages in console, `rcbotd` not found
+### Bots not moving
 
-**Solutions:**
+1. Load waypoints: `rcbot wpt load`
+2. Check debug flags: `rcbot_dont_move 0`, `rcbot_debug_notasks 0`
+3. Enable route debug: `rcbot_debug_show_route 1`
 
-1. Verify MetaMod:Source is loaded:
-   ```
-   meta list
-   ```
+### Bots shooting teammates
 
-2. Check plugin file location:
-   ```
-   {game}/addons/rcbot2meta/bin/rcbot.2.{game}.so
-   ```
+1. Check teamplay setting: `rcbot_teamplay 1`
+2. Disable FFA mode: `rcbot_ffa 0`
 
-3. Verify VDF file exists:
-   ```
-   {game}/addons/rcbot2meta.vdf
-   ```
+### Bots getting kicked
 
-4. Check file permissions (Linux):
-   ```bash
-   chmod +x addons/rcbot2meta/bin/*.so
-   ```
+1. Disable quota system: `rcbot_bot_quota_interval 0`
+2. Ensure maxplayers is sufficient
 
-#### Bots can't join (server full)
+### Waypoints not visible
 
-**Solution:**
-```
-maxplayers 24        // Command line
-mp_maxplayers 24     // In server.cfg
-rcbot_quota 8        // Less than maxplayers
-```
+1. Enable cheats: `sv_cheats 1`
+2. Show waypoints: `rcbot wpt on`
 
-### Bot Behavior Issues
+### Waypoints won't save
 
-#### Bots not moving
-
-**Solutions:**
-
-1. Check for waypoints:
-   ```
-   rcbot wpt load
-   rcbot wpt info
-   ```
-
-2. Disable debug flags:
-   ```
-   rcbot_dont_move 0
-   rcbot_debug_notasks 0
-   ```
-
-3. Enable route debug:
-   ```
-   rcbot_debug_show_route 1
-   ```
-
-#### Bots getting stuck
-
-- Run nav-test to identify issues:
-  ```
-  rcbot navtest start
-  rcbot navtest report
-  ```
-- Add waypoints in problem areas
-- Add jump/crouch waypoints if needed
-
-#### Bots not attacking
-
-**Solutions:**
-```
-rcbot_debug_dont_shoot 0
-rcbot_notarget 0
-```
-
-#### Bots too easy/hard
-
-**Solutions:**
-```
-// Too easy (bots dominating)
-rcbot_skill_min 0.2
-rcbot_skill_max 0.5
-
-// Too hard (bots useless)
-rcbot_skill_min 0.5
-rcbot_skill_max 0.8
-```
-
-#### Bots ignoring objectives
-
-- Ensure dense waypoint coverage around objectives
-- Check game mode detection in console
-- Verify objective waypoints exist
-
-### Waypoint Issues
-
-#### Waypoints not visible
-
-```
-sv_cheats 1
-rcbot wpt on
-```
-
-#### Waypoints won't save
-
-- Check directory permissions
-- Ensure directory exists:
-  ```bash
-  mkdir -p rcbot2/waypoints/tf2/
-  ```
-
-#### Waypoints won't load
-
-- Verify file exists: `rcbot2/waypoints/{game}/{mapname}.rcw`
-- Check filename matches map (case-sensitive on Linux)
-
-### Performance Issues
-
-#### Server lag with bots
-
-**Solutions:**
-```
-rcbot_quota 6                    // Fewer bots
-rcbot_tf2_autoupdate_point_time 1.0
-rcbot_debug 0
-rcbot_debug_show_route 0
-```
-
-### Game-Specific Issues
-
-#### TF2: Engineers not building
-
-```
-rcbot_tf2_dispenserbuild 1
-rcbot_tf2_teleporterbuild 1
-```
-- Ensure sentry waypoints exist
-
-#### TF2: Medics not ubering
-
-- Check skill level (low skill = poor uber timing)
-- Verify medigun settings
-
-### Error Messages
-
-#### "Failed to load plugin"
-
-- Check dependencies (Linux):
-  ```bash
-  ldd addons/rcbot2meta/bin/rcbot.2.tf2.so
-  sudo apt-get install lib32stdc++6
-  ```
-
-#### "Access denied"
-
-- Use server console (dedicated server)
-- Grant access: `rcbot users add <name> 4`
-
-#### "Waypoints not found"
-
-- Download waypoints from repository
-- Create waypoints for the map
-- Check filename matches map exactly
-
-### Diagnostic Commands
-
-```
-rcbotd                   // Display bot info
-meta list                // Verify MM:S loaded
-status                   // Show players/bots
-find rcbot               // List all RCBot CVars
-rcbot debug 2            // Enable debug
-rcbot_debug_show_route 1 // Show navigation
-```
+1. Check directory exists: `rcbot2/waypoints/{game}/`
+2. Check write permissions
 
 ---
 
 ## Getting Help
 
-### Before Asking
-
-1. Check this troubleshooting guide
-2. Search existing GitHub issues
-3. Check console for errors
-4. Test with default settings
-5. Test on different map
-
-### Information to Provide
-
-When reporting issues:
-- RCBot2 version
-- Game and version
-- Server OS (Linux/Windows)
-- Map name
-- Console output
-- Steps to reproduce
-
-### Resources
-
-- **GitHub Issues**: [Report bugs](https://github.com/ethanbissbort/rcbot2/issues)
+- **GitHub Issues**: https://github.com/ethanbissbort/rcbot2/issues
 - **Discord**: [Bots United](https://discord.gg/5v5YvKG4Hr)
-- **Forums**: [Official Forums](http://rcbot.bots-united.com/forums/)
-- **Website**: http://rcbot.bots-united.com/
 - **Waypoints**: http://rcbot.bots-united.com/waypoints.php
 
 ---
 
-## License
-
-RCBot2 is released under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
-
-Modifications must have sources available to players on your server.
-
----
-
 **See Also**:
-- [Waypoint Guide](waypoints.md) - Complete waypoint documentation
-- [Building Guide](BUILDING.md) - Compile from source
-- [ML Documentation](ML.md) - Machine learning features
+- [Waypoint Guide](waypoints.md)
+- [Building Guide](BUILDING.md)
 
 ---
 
-**Last Updated**: 2025-12-27
-**Version**: 1.7+
+**Last Updated**: 2026-01-12
