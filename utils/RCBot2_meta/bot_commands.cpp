@@ -97,7 +97,7 @@ CBotCommandInline ControlCommand("control", CMD_ACCESS_BOT | CMD_ACCESS_DEDICATE
 
 		}
 		return COMMAND_ERROR;
-	});
+	}, "control <name> - Take control of a bot");
 
 CBotCommandInline AddBotCommand("addbot", CMD_ACCESS_BOT | CMD_ACCESS_DEDICATED, [](const CClient* pClient,
 	const BotCommandArgs& args)
@@ -134,7 +134,7 @@ CBotCommandInline AddBotCommand("addbot", CMD_ACCESS_BOT | CMD_ACCESS_DEDICATED,
 	//	CBotGlobals::botMessage(pEntity,0,"error: sv_cheats must be 1 to add bots");
 
 	return COMMAND_ACCESSED;
-	});
+	}, "addbot [name] [class] [team] - Add a bot");
 
 CBotCommandInline KickBotCommand("kickbot", CMD_ACCESS_BOT | CMD_ACCESS_DEDICATED, [](CClient* pClient,
 	const BotCommandArgs& args)
@@ -159,7 +159,7 @@ CBotCommandInline KickBotCommand("kickbot", CMD_ACCESS_BOT | CMD_ACCESS_DEDICATE
 	}
 
 	return COMMAND_ACCESSED;
-}, R"(usage "kickbot" or "kickbot <team>" : kicks random bot or bot on team: <team>)");
+}, "kickbot [team] - Kick a bot (optionally from team)");
 
 // Check if player has SourceMod admin access ('m' or 'z' flags)
 static bool hasSourceModAdminAccess(edict_t* pEdict)
@@ -252,6 +252,13 @@ eBotCommandResult CBotSubcommands::execute(CClient* pClient, const BotCommandArg
 
 void CBotSubcommands::printCommand(edict_t* pPrintTo, const int indent)
 {
+	// For top-level, use table format
+	if (indent == 0)
+	{
+		printCommandTable(pPrintTo, nullptr, true);
+		return;
+	}
+
 	if (indent)
 	{
 		constexpr int maxIndent = 64;
@@ -272,24 +279,158 @@ void CBotSubcommands::printCommand(edict_t* pPrintTo, const int indent)
 }
 
 void CBotSubcommands::printHelp(edict_t* pPrintTo) {
-	this->printCommand(pPrintTo);
+	printCommandTable(pPrintTo, nullptr, true);
+}
+
+// Helper to format command row with proper column alignment
+static void printTableRow(edict_t* pPrintTo, const char* cmd, const char* desc, int cmdWidth = 38)
+{
+	char formatted[256];
+	char cmdPadded[64];
+
+	// Pad command to fixed width
+	snprintf(cmdPadded, sizeof(cmdPadded), "%-*s", cmdWidth, cmd);
+
+	// Truncate description if too long
+	if (desc && *desc)
+	{
+		// Find first sentence or use whole string
+		char descShort[80];
+		const char* periodPos = strchr(desc, '.');
+		const char* newlinePos = strchr(desc, '\n');
+
+		size_t len = strlen(desc);
+		if (periodPos && static_cast<size_t>(periodPos - desc) < len)
+			len = periodPos - desc + 1;
+		if (newlinePos && static_cast<size_t>(newlinePos - desc) < len)
+			len = newlinePos - desc;
+		if (len > 70)
+			len = 70;
+
+		strncpy(descShort, desc, len);
+		descShort[len] = '\0';
+
+		snprintf(formatted, sizeof(formatted), "  %s %s", cmdPadded, descShort);
+	}
+	else
+	{
+		snprintf(formatted, sizeof(formatted), "  %s", cmdPadded);
+	}
+
+	CBotGlobals::botMessage(pPrintTo, 0, formatted);
+}
+
+static void printSectionHeader(edict_t* pPrintTo, const char* title, const char* alias = nullptr)
+{
+	CBotGlobals::botMessage(pPrintTo, 0, " ");
+	if (alias)
+		CBotGlobals::botMessage(pPrintTo, 0, "[%s] (%s)", title, alias);
+	else
+		CBotGlobals::botMessage(pPrintTo, 0, "[%s]", title);
+	CBotGlobals::botMessage(pPrintTo, 0, "--------------------------------------------------------------------------------");
+}
+
+void CBotSubcommands::printCommandTable(edict_t* pPrintTo, const char* parentPath, bool isTopLevel)
+{
+	char fullPath[128];
+
+	// Build full command path
+	if (parentPath && *parentPath)
+		snprintf(fullPath, sizeof(fullPath), "%s %s", parentPath, m_szCommand);
+	else
+		snprintf(fullPath, sizeof(fullPath), "%s", m_szCommand);
+
+	if (isTopLevel)
+	{
+		// Print header
+		CBotGlobals::botMessage(pPrintTo, 0, "================================================================================");
+		CBotGlobals::botMessage(pPrintTo, 0, "                        RCBot2 Command Reference");
+		CBotGlobals::botMessage(pPrintTo, 0, "================================================================================");
+		CBotGlobals::botMessage(pPrintTo, 0, " ");
+		CBotGlobals::botMessage(pPrintTo, 0, "Usage: rcbot <command> [subcommand] [arguments]");
+		CBotGlobals::botMessage(pPrintTo, 0, " ");
+		CBotGlobals::botMessage(pPrintTo, 0, "  COMMAND                                DESCRIPTION");
+		CBotGlobals::botMessage(pPrintTo, 0, "--------------------------------------------------------------------------------");
+	}
+
+	// Print each subcommand
+	for (CBotCommand* const& cmd : m_theCommands)
+	{
+		if (cmd->isContainer())
+		{
+			// It's a subcommand group - print section header and recurse
+			CBotSubcommands* subCmds = static_cast<CBotSubcommands*>(cmd);
+
+			// Print section header
+			if (cmd->getAlias())
+				printSectionHeader(pPrintTo, cmd->getCommand(), cmd->getAlias());
+			else
+				printSectionHeader(pPrintTo, cmd->getCommand());
+
+			// Print each command in this group
+			for (CBotCommand* const& subCmd : subCmds->getSubcommands())
+			{
+				char cmdStr[64];
+				if (cmd->getAlias())
+					snprintf(cmdStr, sizeof(cmdStr), "%s %s", cmd->getAlias(), subCmd->getCommand());
+				else
+					snprintf(cmdStr, sizeof(cmdStr), "%s %s", cmd->getCommand(), subCmd->getCommand());
+
+				// Check if usable on dedicated server
+				if (!pPrintTo && !subCmd->canbeUsedDedicated())
+				{
+					char cmdWithNote[80];
+					snprintf(cmdWithNote, sizeof(cmdWithNote), "%s [client only]", cmdStr);
+					printTableRow(pPrintTo, cmdWithNote, subCmd->getHelp());
+				}
+				else
+				{
+					printTableRow(pPrintTo, cmdStr, subCmd->getHelp());
+				}
+			}
+		}
+		else
+		{
+			// Single command - print directly
+			char cmdStr[64];
+			snprintf(cmdStr, sizeof(cmdStr), "%s", cmd->getCommand());
+
+			if (!pPrintTo && !cmd->canbeUsedDedicated())
+			{
+				char cmdWithNote[80];
+				snprintf(cmdWithNote, sizeof(cmdWithNote), "%s [client only]", cmdStr);
+				printTableRow(pPrintTo, cmdWithNote, cmd->getHelp());
+			}
+			else
+			{
+				printTableRow(pPrintTo, cmdStr, cmd->getHelp());
+			}
+		}
+	}
+
+	if (isTopLevel)
+	{
+		CBotGlobals::botMessage(pPrintTo, 0, " ");
+		CBotGlobals::botMessage(pPrintTo, 0, "================================================================================");
+		CBotGlobals::botMessage(pPrintTo, 0, "For detailed help: rcbot <command> <subcommand> (without arguments)");
+		CBotGlobals::botMessage(pPrintTo, 0, "Documentation: https://github.com/ethanbissbort/rcbot2/blob/main/docs/USAGE.md");
+		CBotGlobals::botMessage(pPrintTo, 0, "================================================================================");
+	}
 }
 
 CBotCommandInline PrintCommands("printcommands", CMD_ACCESS_DEDICATED, [](const CClient* pClient, const BotCommandArgs& args)
 {
 	if ( pClient != nullptr)
 	{
-		CBotGlobals::botMessage(pClient->getPlayer(),0,"All bot commands:");
-		CBotGlobals::m_pCommands->printCommand(pClient->getPlayer());
+		CBotGlobals::m_pCommands->printCommandTable(pClient->getPlayer(), nullptr, true);
 	}
 	else
 	{
-		CBotGlobals::botMessage(nullptr,0,"All bot commands:");
-		CBotGlobals::m_pCommands->printCommand(nullptr);
+		CBotGlobals::m_pCommands->printCommandTable(nullptr, nullptr, true);
 	}
 
 	return COMMAND_ACCESSED;
-});
+}, "Show all RCBot2 commands in table format");
 
 ///////////////////////////////////////////
 
@@ -327,8 +468,17 @@ void CBotCommand::printHelp(edict_t* pPrintTo)
 		CBotGlobals::botMessage(pPrintTo, 0, m_szHelp);
 	else
 		CBotGlobals::botMessage(pPrintTo, 0, "Sorry, no help for this command (yet)");
+}
 
-	//return;
+void CBotCommand::printCommandTable(edict_t* pPrintTo, const char* parentPath, bool isTopLevel)
+{
+	char cmdStr[128];
+	if (parentPath && *parentPath)
+		snprintf(cmdStr, sizeof(cmdStr), "%s %s", parentPath, m_szCommand);
+	else
+		snprintf(cmdStr, sizeof(cmdStr), "%s", m_szCommand);
+
+	printTableRow(pPrintTo, cmdStr, m_szHelp);
 }
 
 CBotCommandInline CTestCommand("test", 0, [](CClient* pClient, const BotCommandArgs& args)
