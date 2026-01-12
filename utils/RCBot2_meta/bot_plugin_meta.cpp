@@ -419,6 +419,8 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, std::size_t 
 	// SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientActive, gameclients, this, &RCBotPluginMeta::Hook_ClientActive_Pre, false);
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientActive, gameclients, this, &RCBotPluginMeta::Hook_ClientActive, true);
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, gameclients, this, &RCBotPluginMeta::Hook_ClientDisconnect, true);
+	// Pre-hook to set FL_FAKECLIENT BEFORE other plugins (like SourceMod Reserved Slots) check it
+	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, gameclients, this, &RCBotPluginMeta::Hook_ClientPutInServer_Pre, false);
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, gameclients, this, &RCBotPluginMeta::Hook_ClientPutInServer, true);
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientConnect, gameclients, this, &RCBotPluginMeta::Hook_ClientConnect, false);
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientCommand, gameclients, this, &RCBotPluginMeta::Hook_ClientCommand, false);
@@ -721,6 +723,7 @@ bool RCBotPluginMeta::Unload(char *error, std::size_t maxlen)
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientActive, gameclients, this, &RCBotPluginMeta::Hook_ClientActive_Pre, false);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientActive, gameclients, this, &RCBotPluginMeta::Hook_ClientActive, true);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, gameclients, this, &RCBotPluginMeta::Hook_ClientDisconnect, true);
+	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, gameclients, this, &RCBotPluginMeta::Hook_ClientPutInServer_Pre, false);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, gameclients, this, &RCBotPluginMeta::Hook_ClientPutInServer, true);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, gameclients, this, &RCBotPluginMeta::Hook_ClientConnect, false);
 	SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientCommand, gameclients, this, &RCBotPluginMeta::Hook_ClientCommand, false);
@@ -941,6 +944,43 @@ bool RCBotPluginMeta::Hook_ClientConnect(edict_t *pEntity,
 	CClients::init(pEntity);
 
 	return true;
+}
+
+// Pre-hook for ClientPutInServer - runs BEFORE other plugins like SourceMod
+// This is CRITICAL for setting FL_FAKECLIENT before Reserved Slots or other
+// plugins check IsFakeClient() and kick the bot
+void RCBotPluginMeta::Hook_ClientPutInServer_Pre(edict_t *pEntity, char const* playername)
+{
+	int slot = IndexOfEdict(pEntity);
+
+	// Fix FL_FAKECLIENT for bots BEFORE any other plugin can check it
+	// This prevents SourceMod's Reserved Slots and similar plugins from kicking bots
+	if (pEntity && !pEntity->IsFree())
+	{
+		// Check if this looks like a bot by name
+		bool likelyBot = (playername && (strstr(playername, "Bot") != nullptr ||
+		                                  strstr(playername, "bot") != nullptr ||
+		                                  strstr(playername, "RCBot") != nullptr));
+
+		if (likelyBot)
+		{
+			int flags = CClassInterface::getFlags(pEntity);
+			fprintf(stderr, "[RCBOT2] Hook_ClientPutInServer_Pre(%d): name='%s', flags=0x%x, FL_FAKECLIENT=%s\n",
+				slot, playername ? playername : "NULL", flags, (flags & FL_FAKECLIENT) ? "YES" : "NO");
+
+			if (!(flags & FL_FAKECLIENT))
+			{
+				// Set FL_FAKECLIENT and FL_CLIENT before anyone else sees this client
+				CClassInterface::addFlags(pEntity, FL_FAKECLIENT | FL_CLIENT);
+				int newFlags = CClassInterface::getFlags(pEntity);
+				fprintf(stderr, "[RCBOT2] Hook_ClientPutInServer_Pre(%d): Fixed FL_FAKECLIENT early, new flags=0x%x\n",
+					slot, newFlags);
+			}
+		}
+	}
+
+	// Continue to game/other hooks
+	RETURN_META(MRES_IGNORED);
 }
 
 void RCBotPluginMeta::Hook_ClientPutInServer(edict_t *pEntity, char const* playername)
