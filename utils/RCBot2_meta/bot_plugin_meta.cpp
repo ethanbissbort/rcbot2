@@ -390,27 +390,13 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, std::size_t 
 	gpGlobals = ismm->GetCGlobals();
 
 	META_LOG(g_PLAPI, "Starting plugin.");
-	fprintf(stderr, "[RCBOT2-DIAG] Step 1: Starting plugin init\n");
-	fflush(stderr);
 
 	/* Load the VSP listener.  This is usually needed for IServerPluginHelpers. */
-	fprintf(stderr, "[RCBOT2-DIAG] Step 2: Adding listener...\n");
-	fflush(stderr);
 	ismm->AddListener(this, this);
-	fprintf(stderr, "[RCBOT2-DIAG] Step 2: Listener added\n");
-	fflush(stderr);
 	if ((vsp_callbacks = ismm->GetVSPInfo(nullptr)) == nullptr)
 	{
-		fprintf(stderr, "[RCBOT2-DIAG] Step 2: Enabling VSP listener...\n");
-		fflush(stderr);
 		ismm->EnableVSPListener();
 	}
-	fprintf(stderr, "[RCBOT2-DIAG] Step 2: VSP setup complete\n");
-	fflush(stderr);
-
-	fprintf(stderr, "[RCBOT2-DIAG] Step 3: Adding SourceHook hooks...\n");
-	fflush(stderr);
-	fflush(stdout);
 	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, server, this, &RCBotPluginMeta::Hook_LevelInit, true);
 	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, server, this, &RCBotPluginMeta::Hook_ServerActivate, true);
 	SH_ADD_HOOK_MEMFUNC(IServerGameDLL, GameFrame, server, this, &RCBotPluginMeta::Hook_GameFrame, true);
@@ -426,57 +412,30 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, std::size_t 
 	SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientCommand, gameclients, this, &RCBotPluginMeta::Hook_ClientCommand, false);
 	//Hook FireEvent to our function - unstable for TF2? [APG]RoboCop[CL]
 	SH_ADD_HOOK_MEMFUNC(IGameEventManager2, FireEvent, gameevents, this, &RCBotPluginMeta::FireGameEvent, false);
-	fprintf(stderr, "[RCBOT2-DIAG] Step 3: SourceHook hooks added\n");
-	fflush(stderr);
 
 #if SOURCE_ENGINE >= SE_ORANGEBOX
-	fprintf(stderr, "[RCBOT2-DIAG] Step 4: Registering ConVars...\n");
-	fflush(stderr);
 	g_pCVar = icvar;
 	ConVar_Register(0, &s_BaseAccessor);
-	fprintf(stderr, "[RCBOT2-DIAG] Step 4: ConVars registered\n");
-	fflush(stderr);
 #else
 	ConCommandBaseMgr::OneTimeInit(&s_BaseAccessor);
 #endif
 
 #if SOURCE_ENGINE!=SE_DARKMESSIAH
 	// read loglevel from startup param for early logging
-	fprintf(stderr, "[RCBOT2-DIAG] Step 5: Reading rcbot_loglevel...\n");
-	fflush(stderr);
 	ConVarRef rcbot_loglevel("rcbot_loglevel");
-	fprintf(stderr, "[RCBOT2-DIAG] Step 5: Calling CommandLine()...\n");
-	fflush(stderr);
 	void* cmdLine = CommandLine();
-	fprintf(stderr, "[RCBOT2-DIAG] Step 5: CommandLine() returned %p\n", cmdLine);
-	fflush(stderr);
 	if (cmdLine != nullptr) {
 		rcbot_loglevel.SetValue(CommandLine()->ParmValue("+rcbot_loglevel", rcbot_loglevel.GetInt()));
 	}
-	fprintf(stderr, "[RCBOT2-DIAG] Step 5: Loglevel setup complete\n");
-	fflush(stderr);
 #endif
 
 	// Read Signatures and Offsets
-	fprintf(stderr, "[RCBOT2-DIAG] Step 6: Initializing mod folder...\n");
-	fflush(stderr);
 	CBotGlobals::initModFolder();
-	fprintf(stderr, "[RCBOT2-DIAG] Step 6: Mod folder initialized\n");
-	fflush(stderr);
-
-	fprintf(stderr, "[RCBOT2-DIAG] Step 7: Reading RCBot folder...\n");
-	fflush(stderr);
 	CBotGlobals::readRCBotFolder();
-	fprintf(stderr, "[RCBOT2-DIAG] Step 7: RCBot folder read\n");
-	fflush(stderr);
 
 	char filename[512];
 	// Load RCBOT2 hook data
-	fprintf(stderr, "[RCBOT2-DIAG] Step 8: Building hookinfo filename...\n");
-	fflush(stderr);
 	CBotGlobals::buildFileName(filename, "hookinfo", BOT_CONFIG_FOLDER, "ini");
-	fprintf(stderr, "[RCBOT2-DIAG] Step 8: Hook file: %s\n", filename);
-	fflush(stderr);
 
 	std::fstream fp(filename, std::fstream::in);
 
@@ -507,30 +466,18 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, std::size_t 
 		rcbot_datamap_offset.SetValue(val);
 #endif
 
-	fprintf(stderr, "[RCBOT2-DIAG] Step 9: Creating GameRules objects...\n");
-	fflush(stderr);
 	g_pGameRules_Obj = new CGameRulesObject(kvl, gameServerFactory);
 	g_pGameRules_Create_Obj = new CCreateGameRulesObject(kvl, gameServerFactory);
-	fprintf(stderr, "[RCBOT2-DIAG] Step 9: GameRules objects created\n");
-	fflush(stderr);
 
 	if (fp)
 		fp.close();
 
-	fprintf(stderr, "[RCBOT2-DIAG] Step 10: Calling CBotGlobals::gameStart()...\n");
-	fflush(stderr);
 	if (!CBotGlobals::gameStart())
 	{
-		fprintf(stderr, "[RCBOT2-DIAG] Step 10: gameStart() FAILED!\n");
-		fflush(stderr);
 		return false;
 	}
-	fprintf(stderr, "[RCBOT2-DIAG] Step 10: gameStart() succeeded\n");
-	fflush(stderr);
 
-	CBotMod *pMod = CBotGlobals::getCurrentMod(); // `*pMod` Unused? [APG]RoboCop[CL]
-	fprintf(stderr, "[RCBOT2-DIAG] Step 11: Current mod pointer: %p\n", static_cast<void*>(pMod));
-	fflush(stderr);
+	CBotMod *pMod = CBotGlobals::getCurrentMod();
 
 #ifdef OVERRIDE_RUNCMD
 	// TODO figure out a more robust gamedata fix instead of vtable
@@ -545,42 +492,20 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, std::size_t 
 
 #endif
 
-	fprintf(stderr, "[RCBOT2-DIAG] Step 12: Calling ENGINE_CALL(LogPrint)...\n");
-	fflush(stderr);
 	ENGINE_CALL(LogPrint)("All hooks started!\n");
-	fprintf(stderr, "[RCBOT2-DIAG] Step 12: ENGINE_CALL(LogPrint) complete\n");
-	fflush(stderr);
 
-	//MathLib_Init( 2.2f, 2.2f, 0.0f, 2.0f );
-	//ConVar_Register( 0 );
-	//InitCVars( interfaceFactory ); // register any cvars we have defined
-
-	fprintf(stderr, "[RCBOT2-DIAG] Step 13: Seeding RNG...\n");
-	fflush(stderr);
 	std::srand( static_cast<unsigned>(time(nullptr)) );  // initialize the random seed
 	MTRand_int32::seed( static_cast<unsigned>(time(nullptr)) );
-	fprintf(stderr, "[RCBOT2-DIAG] Step 13: RNG seeded\n");
-	fflush(stderr);
 
 	// Find the RCBOT2 Path from metamod VDF
 	extern IFileSystem* filesystem;
-	fprintf(stderr, "[RCBOT2-DIAG] Step 14: Loading rcbot2.vdf (filesystem=%p)...\n", static_cast<void*>(filesystem));
-	fflush(stderr);
 	KeyValues* mainkv = new KeyValues("metamodplugin");
-	fprintf(stderr, "[RCBOT2-DIAG] Step 14: KeyValues created\n");
-	fflush(stderr);
 
 	const char* rcbot2path; //Unused? [APG]RoboCop[CL]
 	logger->Log(LogLevel::INFO, "Reading rcbot2 path from VDF...");
 
-	fprintf(stderr, "[RCBOT2-DIAG] Step 14: Calling LoadFromFile...\n");
-	fflush(stderr);
 	mainkv->LoadFromFile(filesystem, "addons/metamod/rcbot2.vdf", "MOD");
-	fprintf(stderr, "[RCBOT2-DIAG] Step 14: LoadFromFile done, calling FindKey...\n");
-	fflush(stderr);
 	KeyValues* temp = mainkv->FindKey("Metamod Plugin");
-	fprintf(stderr, "[RCBOT2-DIAG] Step 14: KeyValues loaded, temp=%p\n", static_cast<void*>(temp));
-	fflush(stderr);
 
 	if (temp)
 		rcbot2path = temp->GetString("rcbot2path", "\0");
@@ -588,61 +513,17 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, std::size_t 
 	mainkv->deleteThis(); //mainkv possible redundant? [APG]RoboCop[CL]
 	mainkv = temp; // Memory leak fix [APG]RoboCop[CL]
 
-	//eventListener2 = new CRCBotEventListener();
-
 	// Initialize bot variables
-	fprintf(stderr, "[RCBOT2-DIAG] Step 15: Setting up bot profiles...\n");
-	fflush(stderr);
 	CBotProfiles::setupProfiles();
-	fprintf(stderr, "[RCBOT2-DIAG] Step 15: Bot profiles setup complete\n");
-	fflush(stderr);
-
-
-	//CBotEvents::setupEvents();
-	fprintf(stderr, "[RCBOT2-DIAG] Step 16: Setting up waypoint types...\n");
-	fflush(stderr);
 	CWaypointTypes::setup();
-	fprintf(stderr, "[RCBOT2-DIAG] Step 16: Waypoint types setup complete\n");
-	fflush(stderr);
-
-	fprintf(stderr, "[RCBOT2-DIAG] Step 17: Setting up waypoint visibility...\n");
-	fflush(stderr);
 	CWaypoints::setupVisibility();
-	fprintf(stderr, "[RCBOT2-DIAG] Step 17: Waypoint visibility setup complete\n");
-	fflush(stderr);
-
-	fprintf(stderr, "[RCBOT2-DIAG] Step 18: Loading bot config file...\n");
-	fflush(stderr);
 	CBotConfigFile::reset();
 	CBotConfigFile::load();
-	fprintf(stderr, "[RCBOT2-DIAG] Step 18: Bot config file loaded\n");
-	fflush(stderr);
-
-	fprintf(stderr, "[RCBOT2-DIAG] Step 19: Setting up menus...\n");
-	fflush(stderr);
 	CBotMenuList::setupMenus();
-	fprintf(stderr, "[RCBOT2-DIAG] Step 19: Menus setup complete\n");
-	fflush(stderr);
-
-	//CRCBotPlugin::ShowLicense();
-
-	//RandomSeed((unsigned)time(NULL));
-
-	fprintf(stderr, "[RCBOT2-DIAG] Step 20: Initializing class interface...\n");
-	fflush(stderr);
 	CClassInterface::init();
-	fprintf(stderr, "[RCBOT2-DIAG] Step 20: Class interface initialized\n");
-	fflush(stderr);
-
-	fprintf(stderr, "[RCBOT2-DIAG] Step 21: Setting up RCBOT2 CVars...\n");
-	fflush(stderr);
 	RCBOT2_Cvar_setup(g_pCVar);
-	fprintf(stderr, "[RCBOT2-DIAG] Step 21: CVars setup complete\n");
-	fflush(stderr);
 
 	// Bot Quota Settings
-	fprintf(stderr, "[RCBOT2-DIAG] Step 22: Loading bot quota settings...\n");
-	fflush(stderr);
 	char bq_line[128];
 
 	int bot_count = 0;
@@ -690,13 +571,6 @@ bool RCBotPluginMeta::Load(PluginId id, ISmmAPI *ismm, char *error, std::size_t 
 			}
 		}
 	}
-	fprintf(stderr, "[RCBOT2-DIAG] Step 22: Bot quota loaded\n");
-	fflush(stderr);
-
-	fprintf(stderr, "[RCBOT2-DIAG] ========================================\n");
-	fprintf(stderr, "[RCBOT2-DIAG] Plugin initialization COMPLETE!\n");
-	fprintf(stderr, "[RCBOT2-DIAG] ========================================\n");
-	fflush(stderr);
 
 	return true;
 }
@@ -804,38 +678,19 @@ void RCBotPluginMeta::Hook_ClientActive_Pre(edict_t *pEntity, const bool bLoadGa
 	if (!pEntity || pEntity->IsFree())
 		return;
 
-	// Check if FL_FAKECLIENT flag is missing and fix it
+	// Check if FL_FAKECLIENT flag is missing and fix it for bots
 	int currentFlags = CClassInterface::getFlags(pEntity);
 
-	// If this looks like it should be a bot (no FL_CLIENT set or name suggests bot)
-	// but FL_FAKECLIENT is not set, fix it
 	if (!(currentFlags & FL_FAKECLIENT))
 	{
 		IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pEntity);
 		if (pInfo)
 		{
 			const char* name = pInfo->GetName();
-			// Check if this appears to be a bot we're creating
-			// Bots typically have names like "RCBot" or are created without proper fake client flag
-			// We can also check if IBotController is available
-			IBotController* pController = g_pBotManager->GetBotController(pEntity);
-
-			fprintf(stderr, "[RCBOT2] Hook_ClientActive_Pre: name='%s', flags=0x%x, FL_FAKECLIENT=%s, controller=%s\n",
-				name, currentFlags,
-				(currentFlags & FL_FAKECLIENT) ? "YES" : "NO",
-				pController ? "VALID" : "NULL");
-
-			// If the controller is NULL but this seems to be a bot (check by name pattern)
-			// or if we're in the middle of creating a bot, set the flag
+			// Fix FL_FAKECLIENT for bots identified by name pattern
 			if (name && (strstr(name, "Bot") || strstr(name, "bot") || strstr(name, "RCBot")))
 			{
-				fprintf(stderr, "[RCBOT2] Hook_ClientActive_Pre: Fixing FL_FAKECLIENT flag!\n");
 				CClassInterface::addFlags(pEntity, FL_FAKECLIENT | FL_CLIENT);
-
-				// Verify the fix worked
-				int newFlags = CClassInterface::getFlags(pEntity);
-				fprintf(stderr, "[RCBOT2] Hook_ClientActive_Pre: After fix, flags=0x%x, FL_FAKECLIENT=%s\n",
-					newFlags, (newFlags & FL_FAKECLIENT) ? "YES" : "NO");
 			}
 		}
 	}
@@ -844,16 +699,6 @@ void RCBotPluginMeta::Hook_ClientActive_Pre(edict_t *pEntity, const bool bLoadGa
 void RCBotPluginMeta::Hook_ClientActive(edict_t *pEntity, const bool bLoadGame)
 {
 	META_LOG(g_PLAPI, "Hook_ClientActive(%d, %d)", IndexOfEdict(pEntity), bLoadGame);
-
-	// Diagnostic logging only - keep it simple like upstream
-	int slot = IndexOfEdict(pEntity);
-	IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pEntity);
-	if (pInfo)
-	{
-		fprintf(stderr, "[RCBOT2] Hook_ClientActive(%d): name='%s', team=%d, isFakeClient=%d\n",
-			slot, pInfo->GetName(), pInfo->GetTeamIndex(), pInfo->IsFakeClient() ? 1 : 0);
-	}
-
 	CClients::clientActive(pEntity);
 }
 
@@ -951,13 +796,10 @@ bool RCBotPluginMeta::Hook_ClientConnect(edict_t *pEntity,
 // plugins check IsFakeClient() and kick the bot
 void RCBotPluginMeta::Hook_ClientPutInServer_Pre(edict_t *pEntity, char const* playername)
 {
-	int slot = IndexOfEdict(pEntity);
-
 	// Fix FL_FAKECLIENT for bots BEFORE any other plugin can check it
 	// This prevents SourceMod's Reserved Slots and similar plugins from kicking bots
 	if (pEntity && !pEntity->IsFree())
 	{
-		// Check if this looks like a bot by name
 		bool likelyBot = (playername && (strstr(playername, "Bot") != nullptr ||
 		                                  strstr(playername, "bot") != nullptr ||
 		                                  strstr(playername, "RCBot") != nullptr));
@@ -965,61 +807,34 @@ void RCBotPluginMeta::Hook_ClientPutInServer_Pre(edict_t *pEntity, char const* p
 		if (likelyBot)
 		{
 			int flags = CClassInterface::getFlags(pEntity);
-			fprintf(stderr, "[RCBOT2] Hook_ClientPutInServer_Pre(%d): name='%s', flags=0x%x, FL_FAKECLIENT=%s\n",
-				slot, playername ? playername : "NULL", flags, (flags & FL_FAKECLIENT) ? "YES" : "NO");
-
 			if (!(flags & FL_FAKECLIENT))
 			{
-				// Set FL_FAKECLIENT and FL_CLIENT before anyone else sees this client
 				CClassInterface::addFlags(pEntity, FL_FAKECLIENT | FL_CLIENT);
-				int newFlags = CClassInterface::getFlags(pEntity);
-				fprintf(stderr, "[RCBOT2] Hook_ClientPutInServer_Pre(%d): Fixed FL_FAKECLIENT early, new flags=0x%x\n",
-					slot, newFlags);
 			}
 		}
 	}
 
-	// Continue to game/other hooks
 	RETURN_META(MRES_IGNORED);
 }
 
 void RCBotPluginMeta::Hook_ClientPutInServer(edict_t *pEntity, char const* playername)
 {
 	CBaseEntity *pEnt = servergameents->EdictToBaseEntity(pEntity);
-	constexpr bool is_Rcbot = false;
-
-	int slot = IndexOfEdict(pEntity);
-	fprintf(stderr, "[RCBOT2] Hook_ClientPutInServer(%d): name='%s'\n", slot, playername ? playername : "NULL");
 
 	// Fix FL_FAKECLIENT for bots - HL2DM's CreateBot doesn't set this properly
-	// Without this fix, the engine thinks it's a real client and kicks it
-	// after Steam authentication timeout (3-5 seconds)
 	if (pEntity && !pEntity->IsFree())
 	{
-		// Always check and fix for any client with "Bot" in name
 		bool likelyBot = (playername && (strstr(playername, "Bot") != nullptr ||
 		                                  strstr(playername, "bot") != nullptr));
-
-		fprintf(stderr, "[RCBOT2] Hook_ClientPutInServer(%d): pEntity valid, IsFree=%d, likelyBot=%d\n",
-			slot, pEntity->IsFree() ? 1 : 0, likelyBot ? 1 : 0);
 
 		if (likelyBot)
 		{
 			int flags = CClassInterface::getFlags(pEntity);
-			fprintf(stderr, "[RCBOT2] Hook_ClientPutInServer(%d): flags=0x%x, FL_FAKECLIENT=%s\n",
-				slot, flags, (flags & FL_FAKECLIENT) ? "YES" : "NO");
-
 			if (!(flags & FL_FAKECLIENT))
 			{
 				CClassInterface::addFlags(pEntity, FL_FAKECLIENT | FL_CLIENT);
-				int newFlags = CClassInterface::getFlags(pEntity);
-				fprintf(stderr, "[RCBOT2] Hook_ClientPutInServer(%d): Fixed FL_FAKECLIENT, new flags=0x%x\n", slot, newFlags);
 			}
 		}
-	}
-	else
-	{
-		fprintf(stderr, "[RCBOT2] Hook_ClientPutInServer(%d): pEntity NULL or IsFree!\n", slot);
 	}
 
 	if ( CClient *pClient = CClients::clientConnected(pEntity) )
@@ -1050,35 +865,7 @@ void RCBotPluginMeta::Hook_ClientPutInServer(edict_t *pEntity, char const* playe
 
 void RCBotPluginMeta::Hook_ClientDisconnect(edict_t *pEntity)
 {
-	// Diagnostic logging for bot kick investigation
-	int slot = IndexOfEdict(pEntity);
-	CBot *pBot = CBots::getBotPointer(pEntity);
-
-	// Get flags and IsFakeClient status at disconnect time
-	int flags = 0;
-	bool isFakeClient = false;
-	if (pEntity && !pEntity->IsFree())
-	{
-		flags = CClassInterface::getFlags(pEntity);
-		IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pEntity);
-		if (pInfo)
-			isFakeClient = pInfo->IsFakeClient();
-	}
-
-	if (pBot && pBot->inUse())
-	{
-		IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pEntity);
-		int team = pInfo ? pInfo->GetTeamIndex() : -1;
-		fprintf(stderr, "[RCBOT2] Hook_ClientDisconnect(%d): Bot '%s' disconnecting, team=%d, flags=0x%x, FL_FAKECLIENT=%s, IsFakeClient=%d\n",
-			slot, pBot->getName(), team, flags, (flags & FL_FAKECLIENT) ? "YES" : "NO", isFakeClient ? 1 : 0);
-	}
-	else
-	{
-		fprintf(stderr, "[RCBOT2] Hook_ClientDisconnect(%d): Not a bot or not in use, flags=0x%x, FL_FAKECLIENT=%s, IsFakeClient=%d\n",
-			slot, flags, (flags & FL_FAKECLIENT) ? "YES" : "NO", isFakeClient ? 1 : 0);
-	}
-
-	CBaseEntity *pEnt = servergameents->EdictToBaseEntity(pEntity); //`*pEnt` Unused? [APG]RoboCop[CL]
+	CBaseEntity *pEnt = servergameents->EdictToBaseEntity(pEntity);
 
 #ifdef OVERRIDE_RUNCMD
 	if ( pEnt )
