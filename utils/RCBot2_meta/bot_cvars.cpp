@@ -83,6 +83,7 @@ ConVar rcbot_runplayercmd_dods("rcbot_runplayer_cmd_dods", "417", 0, "offset of 
 ConVar rcbot_ladder_offs("rcbot_ladder_offs", "42", 0, "difference in height for bot to think it has touched the ladder waypoint");
 ConVar rcbot_ffa("rcbot_ffa", "0", 0, "Free for all mode -- bots shoot everyone");
 ConVar rcbot_teamplay("rcbot_teamplay", "-1", 0, "Force teamplay mode: -1 = use mp_teamplay (default), 0 = force off, 1 = force on");
+ConVar rcbot_coop("rcbot_coop", "-1", 0, "Coop mode: -1 = auto-detect from map name (default), 0 = off, 1 = on. In coop mode bots only attack NPCs, not players");
 ConVar rcbot_prone_enemy_only("rcbot_prone_enemy_only", "1", 0, "if 1 bots only prone in DOD:S when they have an enemy");
 ConVar rcbot_menu_update_time1("rcbot_menu_update_time1", "0.04", 0, "time to update menus [displaying message]");
 ConVar rcbot_menu_update_time2("rcbot_menu_update_time2", "0.2", 0, "time to update menus [interval]");

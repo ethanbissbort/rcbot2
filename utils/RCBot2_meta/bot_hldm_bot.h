@@ -126,6 +126,12 @@ private:
 
 	edict_t* m_pCarryingObject = nullptr; // using grav gun
 	float m_fCachedNormSpeed = 0.0f; // hl2_normspeed cvar value cache -caxanga334
+
+	// Coop mode: spawn death tracking for forced team detection
+	float m_fLastSpawnTime = 0.0f;      // Time of last spawn
+	int m_iQuickDeathCount = 0;          // Count of quick deaths after spawn
+	int m_iLastTeamAttempt = 0;          // Last team we tried to join
+	bool m_bTriedOtherTeam = false;      // Whether we've tried switching teams
 };
 
 #endif

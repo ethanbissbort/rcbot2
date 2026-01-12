@@ -75,6 +75,7 @@ int CBotGlobals :: m_iEventVersion = 1;
 int CBotGlobals :: m_iWaypointDisplayType = 0;
 char CBotGlobals :: m_szMapName[MAX_MAP_STRING_LEN];
 bool CBotGlobals :: m_bTeamplay = false;
+bool CBotGlobals :: m_bCoopMode = false;
 char *CBotGlobals :: m_szRCBotFolder = nullptr;
 
 ///////////
@@ -135,9 +136,39 @@ void CBotGlobals :: setMapName ( const char *szMapName )
 	m_szMapName[MAX_MAP_STRING_LEN-1] = 0; 	
 }
 
-char *CBotGlobals :: getMapName () 
-{ 
-	return m_szMapName; 
+char *CBotGlobals :: getMapName ()
+{
+	return m_szMapName;
+}
+
+// Detect if the current map is a coop map based on name patterns
+bool CBotGlobals :: isCoopMap ()
+{
+	const char* mapName = m_szMapName;
+
+	// Convert to lowercase for comparison
+	char lowerMapName[MAX_MAP_STRING_LEN];
+	int i = 0;
+	while (mapName[i] && i < MAX_MAP_STRING_LEN - 1)
+	{
+		lowerMapName[i] = tolower(mapName[i]);
+		i++;
+	}
+	lowerMapName[i] = '\0';
+
+	// Check for common coop map name patterns
+	if (std::strstr(lowerMapName, "coop") != nullptr)
+		return true;
+	if (std::strstr(lowerMapName, "co-op") != nullptr)
+		return true;
+	if (std::strstr(lowerMapName, "survival") != nullptr)
+		return true;
+	if (std::strstr(lowerMapName, "horde") != nullptr)
+		return true;
+	if (std::strstr(lowerMapName, "pve") != nullptr)
+		return true;
+
+	return false;
 }
 
 bool CBotGlobals :: isCurrentMod (const eModId modid)

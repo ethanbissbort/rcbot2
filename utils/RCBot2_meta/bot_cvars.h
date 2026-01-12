@@ -69,6 +69,7 @@ extern ConVar rcbot_runplayercmd_dods;
 extern ConVar rcbot_ladder_offs;
 extern ConVar rcbot_ffa;
 extern ConVar rcbot_teamplay;
+extern ConVar rcbot_coop;
 extern ConVar rcbot_prone_enemy_only;
 extern ConVar rcbot_menu_update_time1;
 extern ConVar rcbot_menu_update_time2;
