@@ -3440,12 +3440,25 @@ void CBots :: botThink ()
 
 #endif
 
+	// Diagnostic: track bot think calls
+	static int thinkCount = 0;
+	static float lastDiagTime = 0;
+
 	for ( short i = 0; i < RCBOT_MAXPLAYERS; i ++ )
 	{
 		pBot = m_Bots[i];
 
 		if ( pBot->inUse() )
 		{
+			thinkCount++;
+			// Log every 100 think calls (roughly every 1.5 seconds at 66 tick)
+			if (thinkCount % 100 == 0)
+			{
+				int flags = CClassInterface::getFlags(pBot->getEdict());
+				fprintf(stderr, "[RCBOT2] botThink: slot=%d, thinkCount=%d, flags=0x%x, FL_FAKECLIENT=%s\n",
+					i, thinkCount, flags, (flags & FL_FAKECLIENT) ? "YES" : "NO");
+			}
+
 			if ( !bBotStop )
 			{
 				#ifdef _DEBUG

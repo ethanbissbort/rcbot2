@@ -1054,16 +1054,28 @@ void RCBotPluginMeta::Hook_ClientDisconnect(edict_t *pEntity)
 	int slot = IndexOfEdict(pEntity);
 	CBot *pBot = CBots::getBotPointer(pEntity);
 
+	// Get flags and IsFakeClient status at disconnect time
+	int flags = 0;
+	bool isFakeClient = false;
+	if (pEntity && !pEntity->IsFree())
+	{
+		flags = CClassInterface::getFlags(pEntity);
+		IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pEntity);
+		if (pInfo)
+			isFakeClient = pInfo->IsFakeClient();
+	}
+
 	if (pBot && pBot->inUse())
 	{
 		IPlayerInfo *pInfo = playerinfomanager->GetPlayerInfo(pEntity);
 		int team = pInfo ? pInfo->GetTeamIndex() : -1;
-		fprintf(stderr, "[RCBOT2] Hook_ClientDisconnect(%d): Bot '%s' disconnecting, team=%d, inUse=true\n",
-			slot, pBot->getName(), team);
+		fprintf(stderr, "[RCBOT2] Hook_ClientDisconnect(%d): Bot '%s' disconnecting, team=%d, flags=0x%x, FL_FAKECLIENT=%s, IsFakeClient=%d\n",
+			slot, pBot->getName(), team, flags, (flags & FL_FAKECLIENT) ? "YES" : "NO", isFakeClient ? 1 : 0);
 	}
 	else
 	{
-		fprintf(stderr, "[RCBOT2] Hook_ClientDisconnect(%d): Not a bot or not in use\n", slot);
+		fprintf(stderr, "[RCBOT2] Hook_ClientDisconnect(%d): Not a bot or not in use, flags=0x%x, FL_FAKECLIENT=%s, IsFakeClient=%d\n",
+			slot, flags, (flags & FL_FAKECLIENT) ? "YES" : "NO", isFakeClient ? 1 : 0);
 	}
 
 	CBaseEntity *pEnt = servergameents->EdictToBaseEntity(pEntity); //`*pEnt` Unused? [APG]RoboCop[CL]
