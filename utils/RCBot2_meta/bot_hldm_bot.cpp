@@ -80,19 +80,40 @@ bool CHLDMBot :: startGame ()
 	}
 
 	const int team = m_pPlayerInfo->GetTeamIndex();
-	logger->Log(LogLevel::INFO, "[HL2DM] startGame: current team = %d", team);
+	logger->Log(LogLevel::DEBUG, "[HL2DM] startGame: current team = %d", team);
 
 	// Team 0 = Unassigned, 1 = Spectator, 2 = Rebels, 3 = Combine
 	if (team < 2)
 	{
 		// Not on a valid team yet, join one
-		// Use desired team from profile if valid, otherwise pick randomly
 		int targetTeam = m_iDesiredTeam;
-		if (targetTeam < 2 || targetTeam > 3)
+
+		// Coop mode: handle forced team detection
+		if (CBotGlobals::getCoopMode())
 		{
-			// Pick a random team (2=Rebels or 3=Combine)
+			// If we detected forced team kills, switch to the other team
+			if (m_bTriedOtherTeam && m_iLastTeamAttempt > 0)
+			{
+				// Switch to the opposite team
+				targetTeam = (m_iLastTeamAttempt == 2) ? 3 : 2;
+				logger->Log(LogLevel::INFO, "[HL2DM Coop] Switching to team %d after forced team detection", targetTeam);
+				m_bTriedOtherTeam = false; // Reset flag
+				m_iQuickDeathCount = 0;
+			}
+			else
+			{
+				// Coop maps usually force players to Rebels (team 2)
+				targetTeam = 2;
+			}
+		}
+		else if (targetTeam < 2 || targetTeam > 3)
+		{
+			// Standard deathmatch: pick a random team (2=Rebels or 3=Combine)
 			targetTeam = randomInt(0, 1) == 0 ? 2 : 3;
 		}
+
+		// Track which team we're trying to join
+		m_iLastTeamAttempt = targetTeam;
 
 		char teamcmd[32];
 		snprintf(teamcmd, sizeof(teamcmd), "jointeam %d", targetTeam);
@@ -102,7 +123,7 @@ bool CHLDMBot :: startGame ()
 		return false; // Not ready yet, wait for team assignment
 	}
 
-	logger->Log(LogLevel::INFO, "[HL2DM] startGame: bot on valid team %d, ready!", team);
+	logger->Log(LogLevel::DEBUG, "[HL2DM] startGame: bot on valid team %d, ready!", team);
 	return true; // Bot is on a valid team
 }
 
@@ -132,6 +153,31 @@ void CHLDMBot :: died ( edict_t *pKiller, const char *pszWeapon )
 		if ( CBotGlobals::entityIsValid(pKiller) )
 		{
 			m_pNavigator->belief(CBotGlobals::entityOrigin(pKiller),getEyePosition(),bot_beliefmulti.GetFloat(),distanceFrom(pKiller),BELIEF_DANGER);
+		}
+	}
+
+	// Coop mode: track quick deaths to detect forced team join maps
+	// If bot dies within 2 seconds of spawning, it might be a map-enforced team kill
+	if (CBotGlobals::getCoopMode() && m_fLastSpawnTime > 0)
+	{
+		float fTimeSinceSpawn = engine->Time() - m_fLastSpawnTime;
+		if (fTimeSinceSpawn < 2.0f)
+		{
+			m_iQuickDeathCount++;
+			logger->Log(LogLevel::DEBUG, "[HL2DM Coop] Quick death detected (%.2fs after spawn), count: %d",
+			            fTimeSinceSpawn, m_iQuickDeathCount);
+
+			// After 2 quick deaths on the same team, try switching teams
+			if (m_iQuickDeathCount >= 2 && !m_bTriedOtherTeam)
+			{
+				logger->Log(LogLevel::INFO, "[HL2DM Coop] Detected forced team - will try switching teams");
+				m_bTriedOtherTeam = true;
+			}
+		}
+		else
+		{
+			// Reset quick death counter if we survived more than 2 seconds
+			m_iQuickDeathCount = 0;
 		}
 	}
 }
@@ -169,16 +215,19 @@ void CHLDMBot :: spawnInit ()
 	m_FailedPhysObj = nullptr;
 	m_fSprintTime = 0.0f;
 	m_NearestPhysObj = nullptr;
-	
+
 	m_pBattery = nullptr;
 	m_pHealthKit = nullptr;
 	m_pAmmoKit = nullptr;
 	m_pCurrentWeapon = nullptr;
 	m_pCharger = nullptr;
-	
+
 	m_fFixWeaponTime = 0.0f;
 	m_fUseButtonTime = 0.0f;
 	m_fUseCrateTime = 0.0f;
+
+	// Track spawn time for coop mode forced team detection
+	m_fLastSpawnTime = engine->Time();
 
 	ConVarRef hl2_normspeed("hl2_normspeed");
 
@@ -194,8 +243,8 @@ void CHLDMBot :: spawnInit ()
 }
 
 // Is pEdict an enemy? return true if enemy / false if not
-// if checkWeapons is true, check if current weapon can attack enemy 
-//							return false if not 
+// if checkWeapons is true, check if current weapon can attack enemy
+//							return false if not
 bool CHLDMBot::isEnemy(edict_t* pEdict, bool bCheckWeapons)
 {
 	static int entity_index;
@@ -210,7 +259,53 @@ bool CHLDMBot::isEnemy(edict_t* pEdict, bool bCheckWeapons)
 	if (pEdict == m_pEdict)
 		return false;
 
-	// not a player - false
+	// Coop mode: bots only attack NPCs, not players
+	if (CBotGlobals::getCoopMode())
+	{
+		// In coop mode, never attack players
+		if (entity_index > 0 && entity_index <= CBotGlobals::maxClients())
+			return false;
+
+		// Check if this is an NPC
+		if (entity_index > CBotGlobals::maxClients())
+		{
+			const char* szClassname = pEdict->GetClassName();
+
+			// Only attack NPC entities
+			if (std::strncmp(szClassname, "npc_", 4) == 0)
+			{
+				// List of friendly NPCs that should not be attacked
+				static const char* friendlyNPCs[] = {
+					"npc_citizen",
+					"npc_barney",
+					"npc_kleiner",
+					"npc_alyx",
+					"npc_mossman",
+					"npc_monk",
+					"npc_magnusson",
+					"npc_eli",
+					"npc_vortigaunt",
+					"npc_dog"
+				};
+
+				for (const char* friendly : friendlyNPCs)
+				{
+					if (std::strcmp(szClassname, friendly) == 0)
+						return false; // Friendly NPC
+				}
+
+				// Check if NPC is alive
+				if (CClassInterface::getPlayerHealth(pEdict) > 0)
+					return true; // Enemy NPC
+			}
+		}
+
+		return false; // Not an enemy in coop mode
+	}
+
+	// Standard deathmatch mode below
+
+	// not a player - check breakables
 	if (!entity_index || entity_index > CBotGlobals::maxClients())
 	{
 		if (!m_pCarryingObject && pEdict->GetUnknown() && pEdict == m_NearestBreakable && CClassInterface::getPlayerHealth(pEdict) > 0)
@@ -554,7 +649,9 @@ void CHLDMBot :: getTasks (unsigned iIgnore)
 	ADD_UTILITY(BOT_UTIL_FIND_NEAREST_AMMO,(m_pAmmoKit.get() !=nullptr) && getAmmo(0)<5,0.01f*(100-getAmmo(0)))
 
 	// always able to roam around
-	ADD_UTILITY(BOT_UTIL_ROAM,true,0.01f)
+	// In coop mode, roaming has much higher priority since maps are linear progression
+	float fRoamPriority = CBotGlobals::getCoopMode() ? 0.5f : 0.01f;
+	ADD_UTILITY(BOT_UTIL_ROAM,true,fRoamPriority)
 
 	// I have an enemy 
 	ADD_UTILITY(BOT_UTIL_FIND_LAST_ENEMY,

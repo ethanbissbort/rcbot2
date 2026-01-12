@@ -1053,10 +1053,39 @@ bool RCBotPluginMeta::Hook_LevelInit(const char *pMapName,
 	CBotGlobals::setMapRunning(true);
 	CBotConfigFile::reset();
 	
-	if ( mp_teamplay.IsValid() )
+	// Determine teamplay mode: rcbot_teamplay overrides mp_teamplay
+	// rcbot_teamplay: -1 = use mp_teamplay (default), 0 = force off, 1 = force on
+	int teamplayOverride = rcbot_teamplay.GetInt();
+	if (teamplayOverride >= 0)
+	{
+		CBotGlobals::setTeamplay(teamplayOverride > 0);
+	}
+	else if ( mp_teamplay.IsValid() )
+	{
 		CBotGlobals::setTeamplay(mp_teamplay.GetBool());
+	}
 	else
+	{
 		CBotGlobals::setTeamplay(false);
+	}
+
+	// Determine coop mode: rcbot_coop overrides auto-detection
+	// rcbot_coop: -1 = auto-detect from map name (default), 0 = force off, 1 = force on
+	int coopOverride = rcbot_coop.GetInt();
+	if (coopOverride >= 0)
+	{
+		CBotGlobals::setCoopMode(coopOverride > 0);
+	}
+	else
+	{
+		// Auto-detect coop mode from map name
+		CBotGlobals::setCoopMode(CBotGlobals::isCoopMap());
+	}
+
+	if (CBotGlobals::getCoopMode())
+	{
+		logger->Log(LogLevel::INFO, "Coop mode enabled for map: %s", CBotGlobals::getMapName());
+	}
 
 	CBotEvents::setupEvents();
 

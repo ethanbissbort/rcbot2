@@ -1,18 +1,18 @@
 # RCBot2 Waypoint Guide
 
-Complete guide to creating, editing, managing, and automatically testing waypoints for RCBot2.
+Complete guide to creating, editing, and testing waypoints.
+
+---
 
 ## Table of Contents
 
 - [What are Waypoints?](#what-are-waypoints)
 - [Getting Waypoints](#getting-waypoints)
-- [Waypoint Basics](#waypoint-basics)
 - [Creating Waypoints](#creating-waypoints)
-- [Waypoint Types and Flags](#waypoint-types-and-flags)
+- [Waypoint Types](#waypoint-types)
 - [Waypoint Editing](#waypoint-editing)
-- [Automatic Waypoint Generation](#automatic-waypoint-generation)
-- [Waypoint Auto-Testing (Nav-Test)](#waypoint-auto-testing-nav-test)
-- [Waypoint Auto-Refinement](#waypoint-auto-refinement)
+- [Nav-Test System](#nav-test-system)
+- [Auto-Refine System](#auto-refine-system)
 - [Tactical Integration](#tactical-integration)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
@@ -21,15 +21,14 @@ Complete guide to creating, editing, managing, and automatically testing waypoin
 
 ## What are Waypoints?
 
-Waypoints are navigation nodes that guide bots through maps. They form a network of interconnected points that bots use to:
+Waypoints are navigation nodes that guide bots through maps. They form a network of interconnected points for:
 
-- Navigate around the map
-- Find objectives
-- Locate resources (health, ammo)
-- Position strategically (sniper spots, sentry locations)
-- Understand map-specific mechanics
+- Map navigation
+- Finding objectives
+- Locating resources (health, ammo)
+- Strategic positioning (sniper spots, sentry locations)
 
-**Without waypoints**, bots cannot navigate properly and will wander aimlessly.
+**Without waypoints**, bots cannot navigate properly.
 
 ---
 
@@ -37,57 +36,25 @@ Waypoints are navigation nodes that guide bots through maps. They form a network
 
 ### Download Existing Waypoints
 
-1. Visit the [official waypoint repository](http://rcbot.bots-united.com/waypoints.php)
-2. Download waypoints for your game and maps
+1. Visit [waypoint repository](http://rcbot.bots-united.com/waypoints.php)
+2. Download waypoints for your maps
 3. Extract to `{game}/rcbot2/waypoints/{game}/`
 
-**Example structure:**
+**Example:**
 ```
-tf/rcbot2/waypoints/tf2/
-├── pl_badwater.rcw
-├── cp_dustbowl.rcw
-├── ctf_2fort.rcw
-└── ...
+hl2mp/rcbot2/waypoints/hl2dm/
+├── dm_lockdown.rcw
+├── dm_steamlab.rcw
+└── dm_underpass.rcw
 ```
 
 ### Verify Waypoints
 
-Start your server and load a map:
-
 ```
-map pl_badwater
+map dm_lockdown
 rcbot wpt load
 rcbot wpt info
 ```
-
-If waypoints loaded successfully, you'll see waypoint count in console.
-
----
-
-## Waypoint Basics
-
-### Viewing Waypoints
-
-Enable waypoint visualization:
-
-```
-sv_cheats 1          // Required for waypoint display
-rcbot wpt on         // Show waypoints
-```
-
-**Waypoint colors:**
-- **Blue** - Normal waypoint
-- **Red** - Important waypoint (objectives, etc.)
-- **Green** - Wait/Camp waypoint
-- **Yellow** - Jump waypoint
-- **Purple** - Special waypoint (class-specific)
-
-### Waypoint Connections
-
-Waypoints are connected to form a navigation network. Connections are:
-- **Automatic** - Created based on line-of-sight and distance
-- **Manual** - Created with pathwaypoint commands
-- **Bidirectional** or **one-way**
 
 ---
 
@@ -96,595 +63,308 @@ Waypoints are connected to form a navigation network. Connections are:
 ### Prerequisites
 
 ```
-sv_cheats 1              // Enable cheats
+sv_cheats 1              // Required for waypoint display
 rcbot wpt on             // Show waypoints
 noclip                   // Recommended for easier movement
 ```
 
-### Method 1: Automatic Waypointing
+### Method 1: Auto-Waypointing
 
-Easiest method for beginners:
+Easiest method for initial coverage:
 
 ```
-rcbot autowaypoint on    // Enable auto-waypointing
+rcbot autowaypoint on
 ```
 
-**Steps:**
-1. Play through the map normally
-2. Visit all areas, including alternate routes
-3. Waypoints are created automatically as you move
-4. Save when finished: `rcbot wpt save`
+Walk through the map. Waypoints are created automatically. Save when done:
 
-**Pros:**
-- Fast and easy
-- Good coverage
-
-**Cons:**
-- May create too many waypoints
-- Requires manual cleanup
-- Missing special waypoint types
+```
+rcbot wpt save
+```
 
 ### Method 2: Manual Waypointing
 
-Recommended for quality waypoints:
+Better control over placement:
 
 ```
-rcbot autowaypoint off   // Disable auto-waypointing
+rcbot autowaypoint off
+rcbot wpt add              // Add waypoint at current position
+rcbot wpt add jump         // Add jump waypoint
+rcbot wpt add crouch       // Add crouch waypoint
 ```
-
-**Steps:**
-1. Position yourself where you want a waypoint
-2. Add waypoint: `rcbot wpt add`
-3. Move to next location
-4. Repeat until map is covered
-5. Add special waypoints (see [Waypoint Types](#waypoint-types-and-flags))
-6. Save: `rcbot wpt save`
-
-**Pros:**
-- Full control over placement
-- Can add special types immediately
-- Cleaner waypoint network
-
-**Cons:**
-- Time-consuming
-- Requires map knowledge
 
 ### Method 3: Hybrid Approach
 
-Best of both worlds:
-
 1. Use auto-waypointing for initial coverage
 2. Delete unnecessary waypoints
-3. Manually add special waypoints (sniper spots, sentry positions, etc.)
-4. Fine-tune connections
+3. Manually add special waypoints
+4. Run nav-test to verify
 
 ---
 
-## Waypoint Types and Flags
+## Waypoint Types
 
-### General Waypoint Types
+### Navigation Types
 
-#### Normal Waypoint
-```
-rcbot wpt add
-```
-Basic navigation waypoint. No special properties.
+| Type | Command | Use For |
+|------|---------|---------|
+| Normal | `rcbot wpt add` | Basic navigation |
+| Jump | `rcbot wpt add jump` | Gaps, obstacles |
+| Crouch | `rcbot wpt add crouch` | Low passages |
+| Ladder | `rcbot wpt add ladder` | Ladder top/bottom |
+| Wait | `rcbot wpt add wait` | Camp positions |
 
-#### Jump Waypoint
-```
-rcbot wpt add jump
-```
-Bot will jump when reaching this waypoint. Use for:
-- Gaps
-- Small obstacles
-- Crouch-jump locations
+### Resource Types
 
-#### Crouch Waypoint
-```
-rcbot wpt add crouch
-```
-Bot will crouch when moving to this waypoint. Use for:
-- Low passages
-- Crawl spaces
-- Crouch-only areas
+| Type | Command | Use For |
+|------|---------|---------|
+| Health | `rcbot wpt add health` | Health packs/chargers |
+| Ammo | `rcbot wpt add ammo` | Ammo packs |
+| Resupply | `rcbot wpt add resupply` | TF2 resupply lockers |
 
-#### Ladder Waypoint
-```
-rcbot wpt add ladder
-```
-Indicates ladder navigation. Place at:
-- Bottom of ladder
-- Top of ladder
-- Mid-ladder (for long ladders)
+### TF2-Specific Types
 
-#### Wait Waypoint
-```
-rcbot wpt add wait
-```
-Bot will wait/camp at this location. Use for:
-- Ambush positions
-- Defensive spots
-- Choke points
+| Type | Command | Use For |
+|------|---------|---------|
+| Sentry | `rcbot wpt add sentry` | Sentry placement |
+| Dispenser | `rcbot wpt add dispenser` | Dispenser placement |
+| Teleporter Exit | `rcbot wpt add teleporter_exit` | Tele exit |
+| Teleporter Entrance | `rcbot wpt add teleporter_entrance` | Tele entrance |
+| Sniper | `rcbot wpt add sniper` | Sniper spots |
+| Defend | `rcbot wpt add defend` | Defensive positions |
 
-### Resource Waypoints
+### Objective Types
 
-#### Health Pack
-```
-rcbot wpt add health
-```
-Marks health pack location. Bots will seek when injured.
-
-#### Ammo Pack
-```
-rcbot wpt add ammo
-```
-Marks ammo pack location. Bots will seek when low on ammo.
-
-#### Resupply Locker
-```
-rcbot wpt add resupply
-```
-Marks resupply cabinet (TF2). Bots will use to heal/restock.
-
-### Team Fortress 2 Specific
-
-#### Sentry Position
-```
-rcbot wpt add sentry
-```
-Engineer bot sentry gun placement. Place at:
-- Defensive positions
-- Covering objectives
-- Covering chokepoints
-
-**Tips:**
-- Face the direction the sentry should aim
-- Ensure good field of view
-- Near dispenser metal source
-
-#### Dispenser Position
-```
-rcbot wpt add dispenser
-```
-Engineer bot dispenser placement.
-
-#### Teleporter Position
-```
-rcbot wpt add teleporter_exit
-rcbot wpt add teleporter_entrance
-```
-Teleporter placement positions.
-
-#### Sniper Spot
-```
-rcbot wpt add sniper
-```
-Sniper vantage point. Place at:
-- Long sightlines
-- Elevated positions
-- Covering key areas
-
-#### Defend Area
-```
-rcbot wpt add defend
-```
-General defensive position.
-
-### Objective Waypoints
-
-These are often auto-detected but can be manually added:
-
-```
-rcbot wpt add capture_point    // Capture point
-rcbot wpt add payload           // Payload cart
-rcbot wpt add flag              // CTF flag
-rcbot wpt add objective         // Generic objective
-```
+| Type | Command | Use For |
+|------|---------|---------|
+| Capture Point | `rcbot wpt add capture_point` | CP locations |
+| Flag | `rcbot wpt add flag` | CTF flags |
+| Objective | `rcbot wpt add objective` | General objectives |
 
 ---
 
 ## Waypoint Editing
 
-### Viewing Waypoint Info
+### View Waypoint Info
 
 ```
 rcbot wpt info
 ```
 
-Shows information about the nearest waypoint:
-- Waypoint index
-- Type and flags
-- Connections
-- Distance from player
+Shows nearest waypoint details: index, type, flags, connections.
 
-### Deleting Waypoints
+### Delete Waypoints
 
-**Delete nearest waypoint:**
 ```
-rcbot wpt delete
+rcbot wpt delete          // Delete nearest
+rcbot wpt clear           // Delete ALL (caution!)
 ```
 
-**Delete all waypoints (WARNING!):**
-```
-rcbot wpt clear
-```
+### Modify Waypoint Type
 
-**Delete specific waypoint:**
-Position yourself near it and use `rcbot wpt delete`.
-
-### Modifying Waypoint Types
-
-**Give type to nearest waypoint:**
 ```
-rcbot wpt givetype sniper       // Make it a sniper waypoint
-rcbot wpt givetype jump          // Make it a jump waypoint
-```
-
-**Remove type:**
-```
-rcbot wpt givetype none          // Remove special type
+rcbot wpt givetype sniper
+rcbot wpt givetype jump
+rcbot wpt givetype none   // Remove special type
 ```
 
 ### Path Connections
 
-Manual path creation:
-
 ```
-rcbot pathwaypoint create        // Create path to another waypoint
-rcbot pathwaypoint remove        // Remove path
+rcbot pathwaypoint create  // Create connection
+rcbot pathwaypoint remove  // Remove connection
 ```
 
-**Creating one-way paths:**
-Used for:
-- Drop-downs (can't climb back up)
+One-way connections are useful for:
+- Drop-downs (can't climb back)
 - One-way routes
 - Jump-down locations
 
 ---
 
-## Automatic Waypoint Generation
+## Nav-Test System
 
-RCBot2 includes an intelligent automatic waypoint generation system that goes beyond simple distance-based placement.
+Automated waypoint testing that detects navigation problems.
 
-### Enhanced Auto-Waypoint Features
+### Issue Types Detected
 
-The auto-waypoint system analyzes:
-- **Terrain complexity** - Adjusts waypoint density based on area complexity
-- **Entity detection** - Automatically identifies health packs, ammo, objectives
-- **Corner detection** - Places waypoints at direction changes
-- **Crouch detection** - Identifies low passages requiring crouch
-- **Cover analysis** - Recognizes positions that provide cover
-
-### Using Smart Auto-Waypoint
-
-```
-rcbot autowaypoint on           // Enable smart auto-waypointing
-rcbot autowaypoint_dist 200     // Base spacing (auto-adjusted by system)
-```
-
-The system will automatically:
-1. Calculate optimal spacing based on area complexity
-2. Place waypoints at corners and direction changes
-3. Detect and mark health/ammo/objective locations
-4. Add crouch flags where needed
-5. Identify cover positions
-
-### Entity-Based Type Detection
-
-The auto-waypoint system recognizes game-specific entities:
-
-**Team Fortress 2:**
-- Health and ammo packs
-- Resupply cabinets
-- Control points
-- Payload cart
-
-**Counter-Strike: Source:**
-- Bomb sites
-- Hostage locations
-- Buy zones
-
-**Day of Defeat: Source:**
-- Capture flags
-- MG positions
-
-**Half-Life 2: Deathmatch:**
-- Weapon spawns
-- Health chargers
-- Suit chargers
-
----
-
-## Waypoint Auto-Testing (Nav-Test)
-
-The Nav-Test system automatically tests waypoint quality by having bots navigate the map and detecting problems.
-
-### Issue Detection Types
-
-The nav-test system detects:
-
-| Issue Type | Description | Severity |
-|------------|-------------|----------|
-| `STUCK` | Bot got stuck at location | High/Critical |
-| `UNREACHABLE` | Waypoint couldn't be reached | High |
-| `PATH_FAILURE` | Bot abandoned or failed path | Medium/High |
-| `FALL_DAMAGE` | Bot took fall damage | Medium |
-| `OUT_OF_BOUNDS` | Bot went outside expected area | Medium |
-| `SLOW_TRAVERSE` | Path took longer than expected | Low |
-| `CONNECTION_BROKEN` | Connection doesn't work | High |
-| `DOOR_BLOCKED` | Door was locked/blocked | Medium |
+| Issue | Description | Severity |
+|-------|-------------|----------|
+| STUCK | Bot got stuck at location | High/Critical |
+| UNREACHABLE | Waypoint couldn't be reached | High |
+| PATH_FAILURE | Bot abandoned path | Medium/High |
+| FALL_DAMAGE | Bot took fall damage | Medium |
+| CONNECTION_BROKEN | Connection not traversable | High |
 
 ### Running Nav-Test
 
+**Start session:**
 ```
-rcbot navtest start              // Begin automated testing
-rcbot navtest stop               // Stop testing
-rcbot navtest status             // Show current test status
-rcbot navtest report             // Generate issue report
-```
-
-### Nav-Test Configuration
-
-```
-rcbot navtest_duration 300       // Test duration in seconds
-rcbot navtest_bots 4             // Number of test bots
-rcbot navtest_coverage 0.8       // Target waypoint coverage (0.0-1.0)
+rcbot navtest start           // Run indefinitely
+rcbot navtest start 300       // Run for 300 seconds
 ```
 
-### Test Session Workflow
+**Monitor progress:**
+```
+rcbot navtest status
+```
 
-1. **Start test session:**
-   ```
-   rcbot navtest start
-   ```
+**Generate report:**
+```
+rcbot navtest report
+```
 
-2. **Bots automatically:**
-   - Spawn and navigate to random waypoints
-   - Record issues encountered
-   - Track coverage statistics
+**Stop session:**
+```
+rcbot navtest stop
+```
 
-3. **Monitor progress:**
-   ```
-   rcbot navtest status
-   ```
+### Session Data
 
-4. **Generate report:**
-   ```
-   rcbot navtest report
-   ```
+**Save session:**
+```
+rcbot navtest save
+```
 
-5. **Review issues:**
-   Console output shows detected problems with locations and severity.
+**Load session:**
+```
+rcbot navtest load <session_id>
+```
 
-### Issue Report Example
+### Example Report Output
 
 ```
-=== Nav-Test Report ===
+===== Nav-Test Report =====
+Map: dm_lockdown
 Duration: 300 seconds
-Bots tested: 4
-Waypoints covered: 156/183 (85%)
-Issues detected: 12
+Coverage: 156/183 waypoints (85%)
 
-Critical Issues (3):
-  - STUCK at (-1234, 567, 128) near waypoint #45
-  - UNREACHABLE waypoint #89 from waypoint #87
-  - CONNECTION_BROKEN: #23 -> #24
+Issues Summary:
+  Critical: 3
+  High: 4
+  Medium: 5
+  Low: 2
 
-High Issues (4):
-  - PATH_FAILURE navigating to waypoint #67
-  - STUCK at (890, -234, 64) near waypoint #102
-  ...
+Issues by Type:
+  Stuck: 5
+  Unreachable: 2
+  Path Failures: 3
+  Fall Damage: 2
+  Connection Broken: 2
 ```
 
 ---
 
-## Waypoint Auto-Refinement
+## Auto-Refine System
 
-The auto-refinement system uses nav-test results to suggest improvements to your waypoint network.
+Automatic waypoint improvement based on nav-test data.
 
-### Issue Clustering
+### Commands
 
-Related issues are clustered to identify problem areas:
+**Analyze waypoint health:**
+```
+rcbot refine analyze          // Basic analysis
+rcbot refine analyze -v       // Verbose output
+```
 
-- Issues within a radius are grouped
-- Severity scores calculated for clusters
-- Dominant issue types identified
-- Primary waypoints associated with clusters
+**Run auto-refinement:**
+```
+rcbot refine autorefine
+```
 
-### Suggestion Types
+### Auto-Refine Options
 
-The system can suggest:
+| Option | Description |
+|--------|-------------|
+| `analyze-only` | Only analyze, don't modify |
+| `dry-run` | Show what would change |
+| `no-save` | Don't auto-save changes |
+| `no-remove` | Don't remove waypoints |
+| `max-iter=N` | Limit iterations |
 
-| Suggestion | Description |
-|------------|-------------|
-| `ADD_WAYPOINT` | Place new waypoint at suggested position |
-| `REMOVE_WAYPOINT` | Delete problematic waypoint |
-| `RELOCATE_WAYPOINT` | Move waypoint to better position |
-| `ADD_CONNECTION` | Create missing connection |
-| `REMOVE_CONNECTION` | Remove broken connection |
-| `MODIFY_FLAGS` | Change waypoint type/flags |
+**Examples:**
+```
+rcbot refine autorefine analyze-only
+rcbot refine autorefine dry-run
+rcbot refine autorefine max-iter=5
+```
 
-### Running Auto-Refine
+### Rollback Changes
 
 ```
-rcbot autorefine analyze         // Analyze nav-test results
-rcbot autorefine suggest         // Show suggestions
-rcbot autorefine apply           // Apply suggestions (with confirmation)
-rcbot autorefine undo            // Undo last applied suggestions
+rcbot refine autorefine stop          // Stop running refinement
+rcbot refine autorefine rollback      // Undo last change
+rcbot refine autorefine rollback 3    // Undo last 3 changes
 ```
 
 ### Auto-Refine Workflow
 
-1. **Run nav-test first:**
+1. **Run nav-test:**
    ```
-   rcbot navtest start
+   rcbot navtest start 300
    // Wait for completion
    rcbot navtest report
    ```
 
 2. **Analyze issues:**
    ```
-   rcbot autorefine analyze
+   rcbot refine analyze -v
    ```
 
-3. **Review suggestions:**
+3. **Run refinement:**
    ```
-   rcbot autorefine suggest
-   ```
-
-4. **Apply with confirmation:**
-   ```
-   rcbot autorefine apply
-   // Confirm each suggestion or apply all
+   rcbot refine autorefine dry-run    // Preview
+   rcbot refine autorefine            // Apply
    ```
 
-5. **Save refined waypoints:**
+4. **Save waypoints:**
    ```
    rcbot wpt save
    ```
 
-6. **Re-test to verify:**
+5. **Re-test to verify:**
    ```
-   rcbot navtest start
+   rcbot navtest start 300
    ```
-
-### Suggestion Example
-
-```
-=== Auto-Refine Suggestions ===
-Clusters analyzed: 5
-Suggestions generated: 8
-
-[1] ADD_WAYPOINT (confidence: 0.85)
-    Position: (-1234, 567, 128)
-    Reason: Fill gap between waypoints #44 and #46
-
-[2] REMOVE_CONNECTION (confidence: 0.92)
-    Connection: #23 -> #24
-    Reason: Fall damage detected, one-way connection needed
-
-[3] ADD_CONNECTION (confidence: 0.78)
-    Connection: #24 -> #23 (reverse)
-    Reason: Alternative path via ladder exists
-
-[4] MODIFY_FLAGS (confidence: 0.95)
-    Waypoint: #102
-    Add flags: CROUCH
-    Reason: Low ceiling detected at location
-```
 
 ---
 
 ## Tactical Integration
 
-Waypoints integrate with the tactical system for intelligent bot behavior.
+The tactical system analyzes waypoints for strategic properties.
 
-### Playstyle Influence
-
-Bots adapt their navigation based on playstyle:
-
-| Playstyle | Navigation Preference |
-|-----------|----------------------|
-| `AGGRESSIVE` | Direct routes, objective focus |
-| `DEFENSIVE` | Cover positions, defensive waypoints |
-| `BALANCED` | Mixed approach, situational |
-| `SUPPORT` | Team proximity, resource awareness |
-| `FLANKING` | Alternate routes, avoid main paths |
-
-### Tactical Commands
+### Run Tactical Scan
 
 ```
-rcbot tactical status            // Show current tactical state
-rcbot tactical playstyle <type>  // Set bot playstyle
-rcbot tactical debug             // Enable tactical debug output
+rcbot tactical scan
 ```
 
-### Waypoint Tactical Properties
+Analyzes all waypoints for:
+- Cover quality
+- Height advantage
+- Sightlines
+- Chokepoints
+- Resource proximity
 
-Waypoints can have tactical significance:
-- **Cover value** - How much protection the position offers
-- **Visibility score** - Sightlines from position
-- **Objective proximity** - Distance to nearest objective
-- **Danger level** - Historical combat activity
+### Tactical Properties
 
-### Heat Mapping
+| Flag | Description |
+|------|-------------|
+| COVER_FULL | Full cover position |
+| COVER_PARTIAL | Partial cover |
+| COVER_HIGH | Elevated position |
+| SNIPER_SPOT | Good sniper position |
+| CHOKE_POINT | Narrow passage |
+| OPEN_AREA | Open area |
+| HEALTH_NEARBY | Health pack nearby |
+| AMMO_NEARBY | Ammo nearby |
+| DANGER_ZONE | High-risk area |
 
-The tactical system tracks:
-- Combat locations
-- Death locations
-- Successful engagements
-
-This data influences bot pathing decisions.
-
----
-
-## Waypoint Workflow
-
-### Creating Waypoints from Scratch
-
-**1. Initial Pass - Main Routes**
-```
-sv_cheats 1
-rcbot wpt on
-rcbot autowaypoint on
-```
-
-- Walk main routes to each objective
-- Cover all major pathways
-- Visit spawn areas
-
-**2. Save Baseline**
-```
-rcbot wpt save
-```
-
-**3. Add Special Waypoints**
-```
-rcbot autowaypoint off
-```
-
-- Add sniper spots: `rcbot wpt add sniper`
-- Add sentry spots: `rcbot wpt add sentry`
-- Add jump spots: `rcbot wpt add jump`
-- Mark resources (health, ammo)
-
-**4. Cleanup**
-
-- Delete redundant waypoints
-- Check connections
-- Fix problem areas
-
-**5. Run Nav-Test**
-```
-rcbot navtest start
-// Wait for completion
-rcbot navtest report
-```
-
-**6. Apply Refinements**
-```
-rcbot autorefine analyze
-rcbot autorefine apply
-```
-
-**7. Final Save**
-```
-rcbot wpt save
-```
-
-### Editing Existing Waypoints
+### Save/Load Tactical Data
 
 ```
-rcbot wpt load                   // Load existing waypoints
-rcbot wpt on                     // Show waypoints
-```
-
-- Identify problem areas
-- Delete/add waypoints as needed
-- Run nav-test to verify
-
-```
-rcbot wpt save                   // Save modifications
+rcbot tactical save
+rcbot tactical load
 ```
 
 ---
@@ -693,73 +373,52 @@ rcbot wpt save                   // Save modifications
 
 ### Waypoint Density
 
-**General guidelines:**
-- **Open areas**: Waypoints every 200-300 units
-- **Corridors**: Waypoints every 150-200 units
-- **Tight spaces**: Waypoints every 100 units
-- **Objective areas**: Dense coverage
-
-**Check density:**
-```
-rcbot autowaypoint_dist 200      // Adjust auto-waypoint distance
-```
+| Area Type | Spacing |
+|-----------|---------|
+| Open areas | 200-300 units |
+| Corridors | 150-200 units |
+| Tight spaces | 100 units |
+| Objectives | Dense coverage |
 
 ### Coverage Checklist
 
-Ensure waypoints cover:
-
-- [ ] **All routes** to objectives
-- [ ] **Alternate paths** and flanks
-- [ ] **High ground** and elevated areas
-- [ ] **Health pack** locations
-- [ ] **Ammo pack** locations
-- [ ] **Resupply areas**
-- [ ] **Sniper positions**
-- [ ] **Sentry positions** (TF2)
-- [ ] **Objective areas** (capture points, cart, etc.)
-- [ ] **Spawn exits**
-- [ ] **Teleporter positions** (TF2)
+- [ ] All routes to objectives
+- [ ] Alternate paths and flanks
+- [ ] High ground and elevated areas
+- [ ] Health pack locations
+- [ ] Ammo pack locations
+- [ ] Sniper positions
+- [ ] Sentry positions (TF2)
+- [ ] Spawn exits
 
 ### Quality Tips
 
-1. **Test with bots**: Watch bots navigate and fix problem areas
-2. **Run nav-test**: Use automated testing to find issues
-3. **Apply auto-refine**: Let the system suggest improvements
-4. **Check connections**: Ensure waypoints connect properly
-5. **Face important directions**: Waypoint orientation matters for some types
-6. **Avoid over-waypointing**: Too many waypoints = slower navigation
-7. **Mark special areas**: Use appropriate types (sniper, sentry, etc.)
+1. **Test with bots**: Watch navigation and fix problems
+2. **Run nav-test**: Use automated testing
+3. **Apply auto-refine**: Let system suggest improvements
+4. **Check connections**: Ensure proper connectivity
+5. **Avoid over-waypointing**: Too many = slower navigation
 
 ### Game-Specific Tips
 
+**Half-Life 2: Deathmatch:**
+- Mark weapon spawn locations
+- Cover health/suit chargers
+- Mark charger positions for resource waypoints
+
 **Team Fortress 2:**
-- Mark all sentry spots for Engineer bots
+- Mark all sentry spots for Engineers
 - Mark sniper sightlines
 - Dense waypoints around objectives
-- Mark flank routes clearly
-- Add jump/crouch waypoints for mobility
-
-**Counter-Strike: Source:**
-- Mark bombsites densely
-- Mark common camping spots
-- Add cover positions
-- Mark buy zones
 
 **Day of Defeat: Source:**
 - Mark all capture points
 - Mark MG positions
 - Mark sniper windows
-- Dense coverage in combat zones
-
-**Half-Life 2: Deathmatch:**
-- Mark weapon spawn locations
-- Cover health chargers
-- Mark suit charger positions
-- Emphasis on cover positions
 
 ---
 
-## Waypoint Commands Reference
+## Command Reference
 
 ### Basic Commands
 
@@ -768,42 +427,41 @@ Ensure waypoints cover:
 | `rcbot wpt on` | Show waypoints |
 | `rcbot wpt off` | Hide waypoints |
 | `rcbot wpt add [type]` | Add waypoint |
-| `rcbot wpt delete` | Delete nearest waypoint |
-| `rcbot wpt save` | Save waypoints to file |
-| `rcbot wpt load` | Load waypoints from file |
-| `rcbot wpt info` | Show waypoint info |
-| `rcbot wpt clear` | Delete all waypoints |
-| `rcbot wpt givetype <type>` | Change waypoint type |
-| `rcbot wpt drawtype <type>` | Change visualization |
-| `rcbot autowaypoint <on\|off>` | Toggle auto-waypointing |
-| `rcbot pathwaypoint create` | Create path connection |
-| `rcbot pathwaypoint remove` | Remove path connection |
+| `rcbot wpt delete` | Delete nearest |
+| `rcbot wpt save` | Save to file |
+| `rcbot wpt load` | Load from file |
+| `rcbot wpt info` | Show info |
+| `rcbot wpt clear` | Delete all |
+| `rcbot wpt givetype <type>` | Change type |
+| `rcbot autowaypoint <on\|off>` | Toggle auto |
+| `rcbot pathwaypoint create` | Create path |
+| `rcbot pathwaypoint remove` | Remove path |
 
 ### Nav-Test Commands
 
 | Command | Description |
 |---------|-------------|
-| `rcbot navtest start` | Start automated testing |
-| `rcbot navtest stop` | Stop testing |
-| `rcbot navtest status` | Show test status |
-| `rcbot navtest report` | Generate issue report |
+| `rcbot navtest start [duration]` | Start session |
+| `rcbot navtest stop` | Stop session |
+| `rcbot navtest status` | Show status |
+| `rcbot navtest report` | Generate report |
+| `rcbot navtest save` | Save data |
+| `rcbot navtest load <id>` | Load data |
 
 ### Auto-Refine Commands
 
 | Command | Description |
 |---------|-------------|
-| `rcbot autorefine analyze` | Analyze nav-test results |
-| `rcbot autorefine suggest` | Show improvement suggestions |
-| `rcbot autorefine apply` | Apply suggestions |
-| `rcbot autorefine undo` | Undo last changes |
+| `rcbot refine autorefine` | Run refinement |
+| `rcbot refine analyze [-v]` | Analyze health |
 
 ### Tactical Commands
 
 | Command | Description |
 |---------|-------------|
-| `rcbot tactical status` | Show tactical state |
-| `rcbot tactical playstyle <type>` | Set playstyle |
-| `rcbot tactical debug` | Toggle debug output |
+| `rcbot tactical scan` | Analyze waypoints |
+| `rcbot tactical save` | Save tactical data |
+| `rcbot tactical load` | Load tactical data |
 
 ---
 
@@ -812,127 +470,68 @@ Ensure waypoints cover:
 ### Waypoints not visible
 
 ```
-sv_cheats 1              // Enable cheats (required)
-rcbot wpt on             // Show waypoints
+sv_cheats 1
+rcbot wpt on
 ```
 
 ### Waypoints won't save
 
-- Check write permissions on `rcbot2/waypoints/{game}/` directory
-- Ensure directory exists
-- Check server console for errors
+1. Check directory exists: `rcbot2/waypoints/{game}/`
+2. Check write permissions
+3. Check console for errors
 
 ### Bots getting stuck
 
-- Add more waypoints in stuck area
-- Add jump/crouch waypoints if needed
-- Check waypoint connections
-- Use `rcbot_debug_show_route 1` to see bot pathing
-- Run nav-test to identify problem areas
+1. Add more waypoints in problem area
+2. Add jump/crouch waypoints if needed
+3. Check waypoint connections
+4. Run nav-test to identify issues
+5. Use auto-refine for suggestions
 
 ### Waypoints won't load
 
-- Verify file exists: `rcbot2/waypoints/{game}/{mapname}.rcw`
-- Check file permissions
-- Ensure file is not corrupted (re-download or re-create)
+1. Verify file exists: `rcbot2/waypoints/{game}/{mapname}.rcw`
+2. Check filename matches map (case-sensitive on Linux)
+3. Check file isn't corrupted
 
-### Too many waypoints
+### Nav-test not finding issues
 
-```
-rcbot wpt on                     // Show waypoints
-```
+1. Ensure adequate waypoint coverage first
+2. Run for sufficient duration (5+ minutes)
+3. Use 4-8 bots for better coverage
 
-- Delete redundant waypoints in open areas
-- Keep essential navigation points
-- Remove waypoints that are too close together
-- Use auto-refine to identify unnecessary waypoints
+### Auto-refine not working
 
-### Bot ignores objective
-
-- Add objective waypoints near goal
-- Ensure dense coverage around objectives
-- Add defend/attack waypoints
-- Check game-specific objective detection (may be automatic)
-
-### Nav-test issues
-
-- Ensure map has adequate waypoint coverage before testing
-- Use appropriate number of test bots (4-8 recommended)
-- Run tests for sufficient duration (5+ minutes)
-- Check for map-specific issues (doors, elevators)
+1. Run nav-test first to gather data
+2. Check for sufficient issue data
+3. Use `analyze` to see waypoint health
 
 ---
 
 ## Contributing Waypoints
 
-### Waypoint Quality Standards
+### Quality Standards
 
-Before sharing waypoints:
-
+Before sharing:
 - [ ] All major routes covered
 - [ ] Objectives waypointed
-- [ ] Resources marked (health, ammo)
-- [ ] Class-specific spots marked (sniper, sentry, etc.)
+- [ ] Resources marked
 - [ ] Nav-test passed with minimal issues
-- [ ] Auto-refine suggestions addressed
-- [ ] Tested with bots (no stuck spots)
-- [ ] Optimized (no unnecessary waypoints)
-- [ ] Jump/crouch waypoints where needed
+- [ ] Tested with bots
 
-### Submitting Waypoints
+### Submitting
 
-1. Test thoroughly on your server
-2. Run nav-test and address issues
-3. Package waypoint file (.rcw)
-4. Include map name and game
-5. Submit to community waypoint repository
-6. Document any special notes or requirements
-
----
-
-## Advanced Topics
-
-### Waypoint Visibility
-
-Waypoints automatically calculate visibility to other waypoints. This is used for:
-- Pathfinding optimization
-- Cover detection
-- Tactical positioning
-
-### Waypoint Areas
-
-Group waypoints into logical areas:
-- Spawn areas
-- Objective zones
-- Flank routes
-- Defensive positions
-
-### Waypoint Radius
-
-Each waypoint has a radius that determines when a bot has "reached" it. Default is usually sufficient.
-
-### Gravity-Aware Pathing
-
-The waypoint system accounts for server gravity settings:
-- Adjusts jump expectations
-- Modifies fall damage predictions
-- Adapts path costs for vertical movement
-
-### Integration with ML System
-
-Future versions will support:
-- ML-based waypoint suggestion
-- Learned navigation patterns
-- Automatic quality scoring
+1. Test thoroughly
+2. Run nav-test and fix issues
+3. Package .rcw file
+4. Submit to community repository
 
 ---
 
 **See Also**:
-- [Command Reference](USAGE.md#command-reference) - Waypoint commands
-- [Troubleshooting](USAGE.md#troubleshooting) - Common waypoint issues
-- [Configuration Guide](USAGE.md#configuration) - Waypoint-related CVars
+- [Command Reference](USAGE.md#command-reference)
+- [Configuration](USAGE.md#configuration-variables-cvars)
 
 ---
 
-**Last Updated**: 2025-12-27
-**Community Waypoints**: http://rcbot.bots-united.com/waypoints.php
+**Last Updated**: 2026-01-12

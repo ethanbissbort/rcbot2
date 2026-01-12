@@ -112,9 +112,16 @@ public:
 
 	virtual void printHelp ( edict_t *pPrintTo );
 
+	// Table-style printing for better console readability
+	virtual void printCommandTable(edict_t* pPrintTo, const char* parentPath = nullptr, bool isTopLevel = false);
+
 	virtual bool isContainer () { return false; }
 
 	bool canbeUsedDedicated () const { return (this->m_iAccessLevel & CMD_ACCESS_DEDICATED) != 0; }
+
+	const char* getCommand() const { return m_szCommand; }
+	const char* getAlias() const { return m_szAlias; }
+	const char* getHelp() const { return m_szHelp; }
 protected:
 
 	int m_iAccessLevel;
@@ -146,8 +153,11 @@ public:
 	
 	void printCommand(edict_t *pPrintTo, int indent = 0) override;
 	void printHelp(edict_t *pPrintTo) override;
-	
+	void printCommandTable(edict_t* pPrintTo, const char* parentPath = nullptr, bool isTopLevel = false) override;
+
 	bool isContainer() override { return true; }
+
+	const std::vector<CBotCommand*>& getSubcommands() const { return m_theCommands; }
 private:
 	std::vector<CBotCommand*> m_theCommands;
 };

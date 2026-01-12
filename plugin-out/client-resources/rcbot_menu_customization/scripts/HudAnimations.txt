@@ -1,0 +1,131 @@
+// HudAnimations.txt - Animation definitions for HUD elements
+// This file controls menu open/close animations and visual effects
+
+//=============================================================================
+// Menu Animations (for SourceMod ShowMenu/Radio menus)
+//=============================================================================
+
+// Called when a menu opens
+event MenuOpen
+{
+	// Fade in the menu
+	Animate HudMenu		Alpha			"255"		Linear		0.0		0.15
+
+	// Fade in the selection highlight
+	Animate HudMenu		SelectionAlpha	"255"		Linear		0.0		0.1
+
+	// Text scan effect (typewriter-style text reveal)
+	Animate HudMenu		TextScan		"1.0"		Linear		0.0		0.2
+
+	// Reset blur
+	Animate HudMenu		Blur			"0"			Linear		0.0		0.0
+}
+
+// Called when a menu closes
+event MenuClose
+{
+	// Fade out the menu
+	Animate HudMenu		Alpha			"0"			Linear		0.0		0.2
+
+	// Fade out selection
+	Animate HudMenu		SelectionAlpha	"0"			Linear		0.0		0.15
+}
+
+// Called when a menu item is selected
+event MenuPulse
+{
+	// Create a glow/blur pulse effect on selected item
+	Animate HudMenu		Blur			"5"			Linear		0.0		0.05
+	Animate HudMenu		Blur			"0"			Deaccel		0.05	0.3
+}
+
+//=============================================================================
+// Health Animations
+//=============================================================================
+
+event HealthDamageTaken
+{
+	Animate HudHealth	Alpha			"255"		Linear		0.0		0.0
+}
+
+event HealthLow
+{
+	Animate HudHealth	Alpha			"255"		Linear		0.0		0.0
+	Animate HudHealth	FgColor			"255 0 0 255"	Linear	0.0		0.2
+}
+
+event HealthRestored
+{
+	Animate HudHealth	FgColor			"255 255 255 255"	Linear	0.0		0.5
+}
+
+//=============================================================================
+// Suit/Armor Animations
+//=============================================================================
+
+event SuitDamageTaken
+{
+	Animate HudSuit		Alpha			"255"		Linear		0.0		0.0
+}
+
+event SuitPowerZero
+{
+	Animate HudSuit		FgColor			"255 0 0 255"	Linear	0.0		0.2
+}
+
+event SuitPowerRestored
+{
+	Animate HudSuit		FgColor			"255 255 255 255"	Linear	0.0		0.5
+}
+
+//=============================================================================
+// Ammo Animations
+//=============================================================================
+
+event AmmoEmpty
+{
+	Animate HudAmmo		FgColor			"255 0 0 255"	Linear	0.0		0.2
+}
+
+event AmmoLow
+{
+	Animate HudAmmo		FgColor			"255 176 0 255"	Linear	0.0		0.2
+}
+
+event AmmoNormal
+{
+	Animate HudAmmo		FgColor			"255 255 255 255"	Linear	0.0		0.3
+}
+
+//=============================================================================
+// Hint/Message Animations
+//=============================================================================
+
+event HintMessageShow
+{
+	Animate HudHintDisplay	Alpha		"255"		Linear		0.0		0.3
+}
+
+event HintMessageHide
+{
+	Animate HudHintDisplay	Alpha		"0"			Linear		0.0		0.5
+}
+
+//=============================================================================
+// Crosshair Animations
+//=============================================================================
+
+event CrosshairFlash
+{
+	Animate HudCrosshair	FgColor		"255 255 0 255"		Linear	0.0		0.05
+	Animate HudCrosshair	FgColor		"255 255 255 255"	Linear	0.1		0.2
+}
+
+//=============================================================================
+// Death Notice Animations
+//=============================================================================
+
+event DeathNotice
+{
+	Animate HudDeathNotice	Alpha		"255"		Linear		0.0		0.1
+}

@@ -193,6 +193,12 @@ public:
 
 	static void setTeamplay (const bool bOn) { m_bTeamplay = bOn; }
 
+	static bool getCoopMode () { return m_bCoopMode; }
+
+	static void setCoopMode (const bool bOn) { m_bCoopMode = bOn; }
+
+	static bool isCoopMap (); // Detects if current map is a coop map
+
 	static bool isMod (const eModId iMod) { return m_iCurrentMod == iMod; }
 
 	static char *modFolder (){return m_szModFolder;}
@@ -260,6 +266,7 @@ private:
 	static int m_iEventVersion;
 	static int m_iWaypointDisplayType;
 	static bool m_bTeamplay;
+	static bool m_bCoopMode;
 	static float m_fMapStartTime;
 	static char *m_szRCBotFolder;
 

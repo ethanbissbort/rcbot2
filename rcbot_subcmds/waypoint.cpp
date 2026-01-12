@@ -41,7 +41,7 @@ CBotCommandInline WaypointOnCommand("on", CMD_ACCESS_WAYPOINT, [](CClient *pClie
 	}
 
 	return COMMAND_ACCESSED;
-});
+}, "on - Show waypoints (requires sv_cheats 1)");
 
 CBotCommandInline WaypointOffCommand("off", CMD_ACCESS_WAYPOINT, [](CClient *pClient, const BotCommandArgs& args)
 {
@@ -50,14 +50,14 @@ CBotCommandInline WaypointOffCommand("off", CMD_ACCESS_WAYPOINT, [](CClient *pCl
 	CBotGlobals::botMessage(pClient->getPlayer(),0,"waypoints off");
 
 	return COMMAND_ACCESSED;
-});
+}, "off - Hide waypoints");
 
 CBotCommandInline WaypointAddCommand("add", CMD_ACCESS_WAYPOINT, [](CClient *pClient, const BotCommandArgs& args)
 {
 	CWaypoints::addWaypoint(pClient,args[0],args[1],args[2],args[3]);
 
 	return COMMAND_ACCESSED;
-});
+}, "add [type] [type2] [type3] [type4] - Add waypoint at position");
 
 CBotCommandInline WaypointDeleteCommand("delete", CMD_ACCESS_WAYPOINT, [](CClient* pClient, const BotCommandArgs& args)
 {
@@ -129,7 +129,7 @@ CBotCommandInline WaypointDeleteCommand("delete", CMD_ACCESS_WAYPOINT, [](CClien
 	}
 
 	return COMMAND_ACCESSED;
-});
+}, "delete [radius] - Delete nearest waypoint or all in radius");
 
 CBotCommandInline WaypointInfoCommand("info", CMD_ACCESS_WAYPOINT, [](CClient *pClient, const BotCommandArgs& args)
 {
@@ -139,7 +139,7 @@ CBotCommandInline WaypointInfoCommand("info", CMD_ACCESS_WAYPOINT, [](CClient *p
 		pWpt->info(pClient->getPlayer());
 
 	return COMMAND_ACCESSED;
-});
+}, "info - Show nearest waypoint info");
 
 CBotCommandInline WaypointSaveCommand("save", CMD_ACCESS_WAYPOINT, [](CClient *pClient, const BotCommandArgs& args)
 {
@@ -153,7 +153,7 @@ CBotCommandInline WaypointSaveCommand("save", CMD_ACCESS_WAYPOINT, [](CClient *p
 		CBotGlobals::botMessage(nullptr,0,"error: could not save waypoints");
 
 	return COMMAND_ACCESSED;
-});
+}, "save [filename] [author] - Save waypoints to file");
 
 CBotCommandInline WaypointLoadCommand("load", CMD_ACCESS_WAYPOINT, [](CClient* pClient, const BotCommandArgs& args)
 {
@@ -166,7 +166,7 @@ CBotCommandInline WaypointLoadCommand("load", CMD_ACCESS_WAYPOINT, [](CClient* p
 		CBotGlobals::botMessage(nullptr, 0, "error: could not load %s waypoints", mapNameToLoad);
 
 	return COMMAND_ACCESSED;
-});
+}, "load [mapname] - Load waypoints from file");
 
 
 CBotCommandInline WaypointClearCommand("clear", CMD_ACCESS_WAYPOINT, [](const CClient *pClient, const BotCommandArgs& args)
@@ -175,7 +175,7 @@ CBotCommandInline WaypointClearCommand("clear", CMD_ACCESS_WAYPOINT, [](const CC
 	CBotGlobals::botMessage(pClient->getPlayer(),0,"waypoints cleared");
 
 	return COMMAND_ACCESSED;
-});
+}, "clear - Delete ALL waypoints (use with caution!)");
 
 CBotCommandInline WaypointGiveTypeCommand("givetype", CMD_ACCESS_WAYPOINT, [](CClient *pClient, const BotCommandArgs& args)
 {
@@ -246,7 +246,7 @@ CBotCommandInline WaypointGiveTypeCommand("givetype", CMD_ACCESS_WAYPOINT, [](CC
 	}
 
 	return COMMAND_ACCESSED;
-});
+}, "givetype <type> - Toggle waypoint type on nearest waypoint");
 
 CBotCommandInline WaypointDrawTypeCommand("drawtype", CMD_ACCESS_WAYPOINT, [](CClient* pClient, const BotCommandArgs& args)
 {
@@ -265,7 +265,7 @@ CBotCommandInline WaypointDrawTypeCommand("drawtype", CMD_ACCESS_WAYPOINT, [](CC
 		}
 	}
 	return COMMAND_ERROR;
-}, "0: for effects engine (maximum limit of beams)\n1: for debug overlay (no limit of beams) [LISTEN SERVER CLIENT ONLY]");
+}, "drawtype <0|1> - 0: effects engine, 1: debug overlay");
 
 CBotCommandInline WaypointAngleCommand("angle", CMD_ACCESS_WAYPOINT, [](CClient *pClient, const BotCommandArgs& args)
 {
@@ -282,7 +282,7 @@ CBotCommandInline WaypointAngleCommand("angle", CMD_ACCESS_WAYPOINT, [](CClient 
 	}
 
 	return COMMAND_ACCESSED;
-});
+}, "angle - Show angle to nearest waypoint");
 
 CBotCommandInline WaypointSetAngleCommand("updateyaw", CMD_ACCESS_WAYPOINT, [](CClient *pClient, const BotCommandArgs& args)
 {
@@ -296,7 +296,7 @@ CBotCommandInline WaypointSetAngleCommand("updateyaw", CMD_ACCESS_WAYPOINT, [](C
 	}
 
 	return COMMAND_ACCESSED;
-});
+}, "updateyaw - Set waypoint aim angle to current view");
 
 CBotCommandInline WaypointSetAreaCommand("setarea", CMD_ACCESS_WAYPOINT, [](CClient *pClient, const BotCommandArgs& args)
 {
